@@ -1,6 +1,7 @@
 """Punto de entrada del proyecto.
 
-Por ahora se exponen los ejercicios 1, 2, 3 y 4: César, RSA, MPC y Dijkstra.
+Por ahora se exponen los ejercicios 1, 2, 3, 4 y 5: César, RSA, MPC, Dijkstra
+y cierre de estación.
 """
 
 from __future__ import annotations
@@ -8,6 +9,7 @@ from __future__ import annotations
 from src.criptografia.cesar import procesar_cesar
 from src.criptografia.mpc import ejecutar_mpc
 from src.criptografia.rsa import cifrar_texto, descifrar_texto, generar_claves
+from src.grafos.cierre_estacion import analizar_cierre
 from src.grafos.dijkstra import camino_mas_corto, cargar_grafo_desde_json
 
 GRAFO_CIUDAD = "data/grafo_ciudad.json"
@@ -19,13 +21,14 @@ def _leer_enteros_separados(texto: str) -> list[int]:
 
 
 def main() -> None:
-    """Interfaz mínima por consola para los ejercicios 1, 2, 3 y 4."""
+    """Interfaz mínima por consola para los ejercicios 1, 2, 3, 4 y 5."""
     print("Taller 3 - Programacion Discreta")
     print("1) Cifrado Cesar")
     print("2) RSA")
     print("3) MPC")
     print("4) Dijkstra")
-    print("5) Salir")
+    print("5) Cierre de estacion")
+    print("6) Salir")
 
     opcion = input("Seleccione una opcion: ").strip()
 
@@ -100,10 +103,22 @@ def main() -> None:
         return
 
     if opcion == "5":
+        print("Ejercicio 5: Cierre de estacion")
+        grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
+        estacion = input("Ingrese la estacion a evaluar: ").strip()
+
+        resultado = analizar_cierre(grafo, estacion)
+        print(f"Estacion critica: {'si' if resultado['es_critica'] else 'no'}")
+        print(f"Estaciones criticas: {resultado['estaciones_criticas']}")
+        print(f"Componentes restantes: {resultado['componentes_restantes']}")
+        print(f"Numero de componentes: {resultado['numero_componentes']}")
+        return
+
+    if opcion == "6":
         print("Salida solicitada.")
         return
 
-    raise ValueError("Opcion no valida. Use 1, 2, 3, 4 o 5.")
+    raise ValueError("Opcion no valida. Use 1, 2, 3, 4, 5 o 6.")
 
 
 if __name__ == "__main__":

@@ -61,6 +61,7 @@ Programacion_Discreta/
 - Ejercicio 2 implementado: RSA
 - Ejercicio 3 implementado: MPC
 - Ejercicio 4 implementado: Dijkstra
+- Ejercicio 5 implementado: Cierre de estacion
 
 ### Grafos
 
