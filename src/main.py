@@ -5,14 +5,15 @@ Agrupa la ejecucion de todos los ejercicios del taller.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 if __package__ in (None, ""):
     import sys
-    from pathlib import Path
 
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from time import sleep
-from typing import List
+from typing import List, Optional
 
 from src.boole.shannon import resumen_shannon
 from src.boole.simplificacion import resumen_simplificacion
@@ -33,7 +34,7 @@ from src.grafos.coloreo import resumen_coloreo
 from src.grafos.dijkstra import camino_mas_corto, cargar_grafo_desde_json
 
 
-GRAFO_CIUDAD = "data/grafo_ciudad.json"
+GRAFO_CIUDAD = Path(__file__).resolve().parent.parent / "data" / "grafo_ciudad.json"
 ANCHO_MENU = 58
 RETRASO_LETRA = 0.01
 RETRASO_LINEA = 0.05
@@ -90,6 +91,75 @@ def _leer_enteros_separados(texto: str) -> List[int]:
     return [int(parte.strip()) for parte in texto.split(",") if parte.strip()]
 
 
+def _pedir_opcion(mensaje: str, opciones_validas: List[str]) -> str:
+    """Pide una opcion hasta que el usuario ingrese una valida."""
+    while True:
+        opcion = input(mensaje).strip()
+        if opcion in opciones_validas:
+            return opcion
+        print("Entrada invalida. Opciones validas: %s" % ", ".join(opciones_validas))
+
+
+def _pedir_entero(mensaje: str, minimo: int = None) -> int:
+    """Pide un entero validando formato y rango."""
+    while True:
+        valor = input(mensaje).strip()
+        try:
+            numero = int(valor)
+        except ValueError:
+            print("Se espera un numero entero.")
+            continue
+
+        if minimo is not None and numero < minimo:
+            print("Se espera un numero mayor o igual a %s." % minimo)
+            continue
+        return numero
+
+
+def _pedir_entero_opcional(mensaje: str, minimo: int = None) -> Optional[int]:
+    """Pide un entero opcional; Enter devuelve None."""
+    while True:
+        valor = input(mensaje).strip()
+        if not valor:
+            return None
+        try:
+            numero = int(valor)
+        except ValueError:
+            print("Se espera un numero entero o Enter para omitir.")
+            continue
+        if minimo is not None and numero < minimo:
+            print("Se espera un numero mayor o igual a %s." % minimo)
+            continue
+        return numero
+
+
+def _pedir_texto_no_vacio(mensaje: str) -> str:
+    """Pide texto no vacio."""
+    while True:
+        texto = input(mensaje).strip()
+        if texto:
+            return texto
+        print("Se espera un texto no vacio.")
+
+
+def _pedir_lista_enteros(mensaje: str, minimo: int = None) -> List[int]:
+    """Pide una lista de enteros separados por coma."""
+    while True:
+        texto = input(mensaje).strip()
+        try:
+            valores = _leer_enteros_separados(texto)
+        except ValueError:
+            print("Se esperan numeros separados por coma.")
+            continue
+        if not valores:
+            print("Se espera al menos un numero.")
+            continue
+        if minimo is not None and any(valor < minimo for valor in valores):
+            print("Todos los numeros deben ser mayores o iguales a %s." % minimo)
+            continue
+        return valores
+
+
 def _mostrar_menu_principal() -> None:
     _mostrar_titulo("MENU PRINCIPAL", "Seleccione una opcion:")
     _mostrar_opcion("1", "Cifrado Cesar")
@@ -113,7 +183,7 @@ def _preguntar_continuacion() -> str:
     _mostrar_opcion("2", "Volver al menu principal")
     _mostrar_opcion("9", "Salir")
     print()
-    return input("Seleccione una opcion: ").strip()
+    return _pedir_opcion("Seleccione una opcion: ", ["1", "2", "9"])
 
 
 def _ejecutar_cesar() -> None:
@@ -124,17 +194,12 @@ def _ejecutar_cesar() -> None:
         _mostrar_opcion("0", "Volver al menu principal")
         print()
 
-        modo = input("Seleccione una opcion: ").strip()
+        modo = _pedir_opcion("Seleccione una opcion: ", ["0", "1", "2"])
         if modo == "0":
             return
 
-        if modo not in ("1", "2"):
-            print("Opcion no valida. Use 0, 1 o 2.")
-            _esperar_continuar()
-            continue
-
-        texto = input("Ingrese el texto: ")
-        desplazamiento = int(input("Ingrese el desplazamiento: "))
+        texto = _pedir_texto_no_vacio("Ingrese el texto: ")
+        desplazamiento = _pedir_entero("Ingrese el desplazamiento: ")
 
         if modo == "1":
             resultado = procesar_cesar(texto, desplazamiento, "cifrar")
@@ -157,12 +222,16 @@ def _ejecutar_cesar() -> None:
 def _ejecutar_rsa() -> None:
     while True:
         _mostrar_titulo("EJERCICIO 2", "RSA")
-        p = int(input("Ingrese el primo p: "))
-        q = int(input("Ingrese el primo q: "))
-        e_texto = input("Ingrese e (opcional, presione Enter para automatico): ").strip()
-        e = int(e_texto) if e_texto else None
+        p = _pedir_entero("Ingrese el primo p: ", minimo=2)
+        q = _pedir_entero("Ingrese el primo q: ", minimo=2)
+        e = _pedir_entero_opcional("Ingrese e (opcional, presione Enter para automatico): ", minimo=2)
 
-        clave_publica, clave_privada = generar_claves(p, q, e)
+        try:
+            clave_publica, clave_privada = generar_claves(p, q, e)
+        except ValueError as exc:
+            print("No se pudieron generar las claves: %s" % exc)
+            _esperar_continuar()
+            continue
         print("Clave publica: %s" % (clave_publica,))
         print("Clave privada: %s" % (clave_privada,))
 
@@ -172,23 +241,29 @@ def _ejecutar_rsa() -> None:
             _mostrar_opcion("2", "Descifrar bloques")
             _mostrar_opcion("0", "Volver al menu principal")
             print()
-            modo = input("Seleccione una opcion: ").strip()
+            modo = _pedir_opcion("Seleccione una opcion: ", ["0", "1", "2"])
 
             if modo == "0":
                 return
 
             if modo == "1":
-                texto = input("Ingrese el texto ASCII a cifrar: ")
-                cifrado = cifrar_texto(texto, clave_publica)
+                texto = _pedir_texto_no_vacio("Ingrese el texto ASCII a cifrar: ")
+                try:
+                    cifrado = cifrar_texto(texto, clave_publica)
+                except ValueError as exc:
+                    print("No se pudo cifrar el texto: %s" % exc)
+                    _esperar_continuar()
+                    continue
                 print("Bloques cifrados: %s" % cifrado)
             elif modo == "2":
-                bloques = _leer_enteros_separados(input("Ingrese los bloques separados por coma: "))
-                texto = descifrar_texto(bloques, clave_privada)
+                bloques = _pedir_lista_enteros("Ingrese los bloques separados por coma: ", minimo=0)
+                try:
+                    texto = descifrar_texto(bloques, clave_privada)
+                except ValueError as exc:
+                    print("No se pudo descifrar el mensaje: %s" % exc)
+                    _esperar_continuar()
+                    continue
                 print("Texto descifrado: %s" % texto)
-            else:
-                print("Opcion no valida. Use 0, 1 o 2.")
-                _esperar_continuar()
-                continue
 
             opcion = _preguntar_continuacion()
             if opcion == "1":
@@ -204,12 +279,16 @@ def _ejecutar_rsa() -> None:
 def _ejecutar_mpc() -> None:
     while True:
         _mostrar_titulo("EJERCICIO 3", "MPC")
-        valores = _leer_enteros_separados(input("Ingrese los valores separados por coma: "))
-        num_participantes = int(input("Ingrese el numero de participantes: "))
-        modulo_texto = input("Ingrese el modulo opcional (Enter para omitir): ").strip()
-        modulo = int(modulo_texto) if modulo_texto else None
+        valores = _pedir_lista_enteros("Ingrese los valores separados por coma: ")
+        num_participantes = _pedir_entero("Ingrese el numero de participantes: ", minimo=2)
+        modulo = _pedir_entero_opcional("Ingrese el modulo opcional (Enter para omitir): ", minimo=1)
 
-        resultado = ejecutar_mpc(valores, num_participantes=num_participantes, modulo=modulo)
+        try:
+            resultado = ejecutar_mpc(valores, num_participantes=num_participantes, modulo=modulo)
+        except ValueError as exc:
+            print("No se pudo ejecutar MPC: %s" % exc)
+            _esperar_continuar()
+            continue
         print("Resultado MPC: %s" % resultado)
 
         opcion = _preguntar_continuacion()
@@ -226,11 +305,22 @@ def _ejecutar_mpc() -> None:
 def _ejecutar_dijkstra() -> None:
     while True:
         _mostrar_titulo("EJERCICIO 4", "DIJKSTRA")
-        grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
-        origen = input("Ingrese el nodo origen: ").strip()
-        destino = input("Ingrese el nodo destino: ").strip()
+        try:
+            grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
+        except (OSError, ValueError, TypeError) as exc:
+            print("No se pudo cargar el grafo: %s" % exc)
+            _esperar_continuar()
+            return
 
-        distancia, camino = camino_mas_corto(grafo, origen, destino)
+        origen = _pedir_texto_no_vacio("Ingrese el nodo origen: ")
+        destino = _pedir_texto_no_vacio("Ingrese el nodo destino: ")
+
+        try:
+            distancia, camino = camino_mas_corto(grafo, origen, destino)
+        except (KeyError, ValueError) as exc:
+            print("No se pudo calcular el camino: %s" % exc)
+            _esperar_continuar()
+            continue
         print("Distancia minima: %s" % distancia)
         print("Camino: %s" % " -> ".join(camino))
 
@@ -248,10 +338,20 @@ def _ejecutar_dijkstra() -> None:
 def _ejecutar_cierre_estacion() -> None:
     while True:
         _mostrar_titulo("EJERCICIO 5", "CIERRE DE ESTACION")
-        grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
-        estacion = input("Ingrese la estacion a evaluar: ").strip()
+        try:
+            grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
+        except (OSError, ValueError, TypeError) as exc:
+            print("No se pudo cargar el grafo: %s" % exc)
+            _esperar_continuar()
+            return
+        estacion = _pedir_texto_no_vacio("Ingrese la estacion a evaluar: ")
 
-        resultado = analizar_cierre(grafo, estacion)
+        try:
+            resultado = analizar_cierre(grafo, estacion)
+        except (KeyError, ValueError, TypeError) as exc:
+            print("No se pudo analizar la estacion: %s" % exc)
+            _esperar_continuar()
+            continue
         print("Estacion critica: %s" % ("si" if resultado["es_critica"] else "no"))
         print("Estaciones criticas: %s" % resultado["estaciones_criticas"])
         print("Componentes restantes: %s" % resultado["componentes_restantes"])
@@ -271,8 +371,13 @@ def _ejecutar_cierre_estacion() -> None:
 def _ejecutar_coloreo() -> None:
     while True:
         _mostrar_titulo("EJERCICIO 6", "COLOREO DE GRAFOS")
-        grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
-        resultado = resumen_coloreo(grafo)
+        try:
+            grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
+            resultado = resumen_coloreo(grafo)
+        except (OSError, ValueError, TypeError) as exc:
+            print("No se pudo analizar el grafo: %s" % exc)
+            _esperar_continuar()
+            return
         print("Coloreo: %s" % resultado["colores"])
         print("Numero de colores: %s" % resultado["numero_colores"])
         print("Coloreo valido: %s" % ("si" if resultado["es_valido"] else "no"))
@@ -299,7 +404,7 @@ def _ejecutar_qubit() -> None:
         _mostrar_opcion("0", "Volver al menu principal")
         print()
 
-        modo = input("Seleccione una opcion: ").strip()
+        modo = _pedir_opcion("Seleccione una opcion: ", ["0", "1", "2", "3", "4", "5"])
         if modo == "0":
             return
         if modo == "1":
@@ -337,29 +442,49 @@ def _ejecutar_boole() -> None:
         _mostrar_opcion("0", "Volver al menu principal")
         print()
 
-        modo = input("Seleccione una opcion: ").strip()
+        modo = _pedir_opcion("Seleccione una opcion: ", ["0", "1", "2", "3"])
         if modo == "0":
             return
         if modo == "1":
-            expresion = input("Ingrese la expresion booleana (use and/or/not o ^): ").strip()
-            resultado = resumen_tabla_verdad(expresion)
+            expresion = _pedir_texto_no_vacio("Ingrese la expresion booleana (use and/or/not o ^): ")
+            try:
+                resultado = resumen_tabla_verdad(expresion)
+            except Exception as exc:
+                print("No se pudo evaluar la expresion: %s" % exc)
+                _esperar_continuar()
+                continue
             print("Variables: %s" % resultado["variables"])
             print("Filas: %s" % resultado["filas"])
             print("Verdaderos: %s" % resultado["verdaderos"])
             print("Falsos: %s" % resultado["falsos"])
         elif modo == "2":
-            expresion = input("Ingrese la expresion booleana: ").strip()
-            resultado = resumen_simplificacion(expresion)
+            expresion = _pedir_texto_no_vacio("Ingrese la expresion booleana: ")
+            try:
+                resultado = resumen_simplificacion(expresion)
+            except Exception as exc:
+                print("No se pudo simplificar la expresion: %s" % exc)
+                _esperar_continuar()
+                continue
             print("FDN: %s" % resultado["fdn"])
             print("FCN: %s" % resultado["fcn"])
             print("Simplificada: %s" % resultado["simplificada"])
         elif modo == "3":
-            frecuencias = _leer_enteros_separados(input("Ingrese las frecuencias separadas por coma: "))
-            total = sum(frecuencias)
-            if total <= 0:
-                raise ValueError("La suma de frecuencias debe ser mayor que 0.")
-            probabilidades = [float(f) / total for f in frecuencias]
-            resultado = resumen_shannon(probabilidades)
+            frecuencias = _pedir_lista_enteros("Ingrese las frecuencias separadas por coma: ", minimo=0)
+            try:
+                total = sum(frecuencias)
+                if total <= 0:
+                    print("La suma de frecuencias debe ser mayor que 0.")
+                    _esperar_continuar()
+                    continue
+                resultado = resumen_shannon([float(f) / total for f in frecuencias])
+            except ZeroDivisionError:
+                print("La suma de frecuencias debe ser mayor que 0.")
+                _esperar_continuar()
+                continue
+            except ValueError as exc:
+                print("No se pudo calcular Shannon: %s" % exc)
+                _esperar_continuar()
+                continue
             print("Probabilidades: %s" % resultado["probabilidades"])
             print("Entropia: %s" % resultado["entropia"])
         else:
@@ -382,7 +507,7 @@ def main() -> None:
     """Interfaz minima por consola para todos los ejercicios."""
     while True:
         _mostrar_menu_principal()
-        opcion = input("Seleccione una opcion: ").strip()
+        opcion = _pedir_opcion("Seleccione una opcion: ", ["1", "2", "3", "4", "5", "6", "7", "8", "9"])
 
         if opcion == "1":
             _ejecutar_cesar()
