@@ -34,10 +34,15 @@ Todos los algoritmos fueron implementados siguiendo los requerimientos del talle
 ## Estructura
 
 ```
-src/
-tests/
-docs/
-data/
+Programacion_Discreta/
+├── README.md
+├── LICENSE
+├── .gitignore
+├── requirements.txt
+├── src/
+├── tests/
+├── data/
+└── docs/
 ```
 
 ---
@@ -49,6 +54,10 @@ data/
 - Cifrado César
 - RSA
 - MPC
+
+### Estado actual
+
+- Ejercicio 1 implementado: Cifrado César
 
 ### Grafos
 

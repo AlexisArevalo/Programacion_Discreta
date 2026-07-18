@@ -1,0 +1,2 @@
+"""Cierre de estación."""
+

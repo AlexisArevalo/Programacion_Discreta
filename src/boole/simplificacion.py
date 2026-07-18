@@ -1,0 +1,2 @@
+"""Simplificación booleana."""
+
