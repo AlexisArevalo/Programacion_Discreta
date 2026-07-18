@@ -62,6 +62,8 @@ Programacion_Discreta/
 - Ejercicio 3 implementado: MPC
 - Ejercicio 4 implementado: Dijkstra
 - Ejercicio 5 implementado: Cierre de estacion
+- Ejercicio 6 implementado: Coloreo de grafos
+- Ejercicio 7 implementado: Qubit
 
 ### Grafos
 

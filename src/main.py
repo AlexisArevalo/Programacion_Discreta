@@ -1,7 +1,7 @@
 """Punto de entrada del proyecto.
 
-Por ahora se exponen los ejercicios 1, 2, 3, 4 y 5: César, RSA, MPC, Dijkstra
-y cierre de estación.
+Por ahora se exponen los ejercicios 1, 2, 3, 4, 5, 6 y 7: César, RSA, MPC,
+Dijkstra, cierre de estación, coloreo de grafos y qubit.
 """
 
 from __future__ import annotations
@@ -10,7 +10,9 @@ from src.criptografia.cesar import procesar_cesar
 from src.criptografia.mpc import ejecutar_mpc
 from src.criptografia.rsa import cifrar_texto, descifrar_texto, generar_claves
 from src.grafos.cierre_estacion import analizar_cierre
+from src.grafos.coloreo import resumen_coloreo
 from src.grafos.dijkstra import camino_mas_corto, cargar_grafo_desde_json
+from src.cuantica.qubit import aplicar_puerta_h, aplicar_puerta_x, ket_0, ket_1, resumen_qubit, superposicion
 
 GRAFO_CIUDAD = "data/grafo_ciudad.json"
 
@@ -21,14 +23,16 @@ def _leer_enteros_separados(texto: str) -> list[int]:
 
 
 def main() -> None:
-    """Interfaz mínima por consola para los ejercicios 1, 2, 3, 4 y 5."""
+    """Interfaz mínima por consola para los ejercicios 1, 2, 3, 4, 5, 6 y 7."""
     print("Taller 3 - Programacion Discreta")
     print("1) Cifrado Cesar")
     print("2) RSA")
     print("3) MPC")
     print("4) Dijkstra")
     print("5) Cierre de estacion")
-    print("6) Salir")
+    print("6) Coloreo de grafos")
+    print("7) Qubit")
+    print("8) Salir")
 
     opcion = input("Seleccione una opcion: ").strip()
 
@@ -115,10 +119,46 @@ def main() -> None:
         return
 
     if opcion == "6":
+        print("Ejercicio 6: Coloreo de grafos")
+        grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
+        resultado = resumen_coloreo(grafo)
+        print(f"Coloreo: {resultado['colores']}")
+        print(f"Numero de colores: {resultado['numero_colores']}")
+        print(f"Coloreo valido: {'si' if resultado['es_valido'] else 'no'}")
+        return
+
+    if opcion == "7":
+        print("Ejercicio 7: Qubit")
+        print("1) Estado |0>")
+        print("2) Estado |1>")
+        print("3) Superposicion")
+        print("4) Aplicar puerta X a |0>")
+        print("5) Aplicar puerta H a |0>")
+
+        modo = input("Seleccione una opcion (1/2/3/4/5): ").strip()
+        if modo == "1":
+            print(f"Resumen: {resumen_qubit(ket_0())}")
+            return
+        if modo == "2":
+            print(f"Resumen: {resumen_qubit(ket_1())}")
+            return
+        if modo == "3":
+            print(f"Resumen: {resumen_qubit(superposicion())}")
+            return
+        if modo == "4":
+            print(f"Resumen: {resumen_qubit(aplicar_puerta_x(ket_0()))}")
+            return
+        if modo == "5":
+            print(f"Resumen: {resumen_qubit(aplicar_puerta_h(ket_0()))}")
+            return
+
+        raise ValueError("Opcion no valida. Use 1, 2, 3, 4 o 5.")
+
+    if opcion == "8":
         print("Salida solicitada.")
         return
 
-    raise ValueError("Opcion no valida. Use 1, 2, 3, 4, 5 o 6.")
+    raise ValueError("Opcion no valida. Use 1, 2, 3, 4, 5, 6, 7 u 8.")
 
 
 if __name__ == "__main__":
