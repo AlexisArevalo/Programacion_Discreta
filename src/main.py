@@ -1,11 +1,12 @@
 """Punto de entrada del proyecto.
 
-Por ahora se exponen los ejercicios 1 y 2: César y RSA.
+Por ahora se exponen los ejercicios 1, 2 y 3: César, RSA y MPC.
 """
 
 from __future__ import annotations
 
 from src.criptografia.cesar import procesar_cesar
+from src.criptografia.mpc import ejecutar_mpc
 from src.criptografia.rsa import cifrar_texto, descifrar_texto, generar_claves
 
 
@@ -15,11 +16,12 @@ def _leer_enteros_separados(texto: str) -> list[int]:
 
 
 def main() -> None:
-    """Interfaz mínima por consola para los ejercicios 1 y 2."""
+    """Interfaz mínima por consola para los ejercicios 1, 2 y 3."""
     print("Taller 3 - Programacion Discreta")
     print("1) Cifrado Cesar")
     print("2) RSA")
-    print("3) Salir")
+    print("3) MPC")
+    print("4) Salir")
 
     opcion = input("Seleccione una opcion: ").strip()
 
@@ -72,10 +74,21 @@ def main() -> None:
         raise ValueError("Opcion no valida. Use 1 o 2.")
 
     if opcion == "3":
+        print("Ejercicio 3: MPC")
+        valores = _leer_enteros_separados(input("Ingrese los valores separados por coma: "))
+        num_participantes = int(input("Ingrese el numero de participantes: "))
+        modulo_texto = input("Ingrese el modulo opcional (Enter para omitir): ").strip()
+        modulo = int(modulo_texto) if modulo_texto else None
+
+        resultado = ejecutar_mpc(valores, num_participantes=num_participantes, modulo=modulo)
+        print(f"Resultado MPC: {resultado}")
+        return
+
+    if opcion == "4":
         print("Salida solicitada.")
         return
 
-    raise ValueError("Opcion no valida. Use 1, 2 o 3.")
+    raise ValueError("Opcion no valida. Use 1, 2, 3 o 4.")
 
 
 if __name__ == "__main__":

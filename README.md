@@ -59,6 +59,7 @@ Programacion_Discreta/
 
 - Ejercicio 1 implementado: Cifrado César
 - Ejercicio 2 implementado: RSA
+- Ejercicio 3 implementado: MPC
 
 ### Grafos
 
