@@ -5,6 +5,12 @@ Agrupa la ejecucion de todos los ejercicios del taller.
 
 from __future__ import annotations
 
+if __package__ in (None, ""):
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from src.boole.shannon import resumen_shannon
 from src.boole.simplificacion import resumen_simplificacion
 from src.boole.tablas_verdad import resumen_tabla_verdad
