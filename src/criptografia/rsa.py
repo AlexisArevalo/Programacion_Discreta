@@ -1,16 +1,13 @@
-"""Implementación educativa de RSA.
-
-El módulo trabaja con texto ASCII por carácter para mantener el ejemplo
-simple y manejable en un taller de Matemáticas Discretas.
-"""
+"""Implementacion educativa de RSA."""
 
 from __future__ import annotations
 
 from math import gcd
+from typing import List, Optional, Tuple
 
 
 def es_primo(numero: int) -> bool:
-    """Determina si un número es primo usando división de prueba."""
+    """Determina si un numero es primo usando division de prueba."""
     if numero < 2:
         return False
     if numero in (2, 3):
@@ -34,7 +31,7 @@ def _validar_primos(p: int, q: int) -> None:
 
 
 def _e_por_defecto(phi: int) -> int:
-    """Busca un exponente público pequeño y coprimo con phi."""
+    """Busca un exponente publico pequeno y coprimo con phi."""
     candidato = 65537
     if candidato < phi and gcd(candidato, phi) == 1:
         return candidato
@@ -48,12 +45,8 @@ def _e_por_defecto(phi: int) -> int:
     raise ValueError("No se pudo encontrar un exponente publico valido.")
 
 
-def generar_claves(p: int, q: int, e: int | None = None) -> tuple[tuple[int, int], tuple[int, int]]:
-    """Genera la clave pública y privada de RSA.
-
-    Retorna:
-        ((e, n), (d, n))
-    """
+def generar_claves(p: int, q: int, e: Optional[int] = None) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    """Genera la clave publica y privada de RSA."""
     _validar_primos(p, q)
 
     n = p * q
@@ -71,44 +64,44 @@ def generar_claves(p: int, q: int, e: int | None = None) -> tuple[tuple[int, int
     return (e, n), (d, n)
 
 
-def cifrar_numero(mensaje: int, clave_publica: tuple[int, int]) -> int:
-    """Cifra un número entero con RSA."""
+def cifrar_numero(mensaje: int, clave_publica: Tuple[int, int]) -> int:
+    """Cifra un numero entero con RSA."""
     e, n = clave_publica
     if mensaje < 0 or mensaje >= n:
         raise ValueError("El mensaje debe estar en el rango [0, n).")
     return pow(mensaje, e, n)
 
 
-def descifrar_numero(cifrado: int, clave_privada: tuple[int, int]) -> int:
-    """Descifra un número entero con RSA."""
+def descifrar_numero(cifrado: int, clave_privada: Tuple[int, int]) -> int:
+    """Descifra un numero entero con RSA."""
     d, n = clave_privada
     if cifrado < 0 or cifrado >= n:
         raise ValueError("El cifrado debe estar en el rango [0, n).")
     return pow(cifrado, d, n)
 
 
-def texto_a_codigos(texto: str) -> list[int]:
-    """Convierte texto a códigos ASCII."""
+def texto_a_codigos(texto: str) -> List[int]:
+    """Convierte texto a codigos ASCII."""
     return [ord(caracter) for caracter in texto]
 
 
-def codigos_a_texto(codigos: list[int]) -> str:
-    """Convierte códigos ASCII a texto."""
+def codigos_a_texto(codigos: List[int]) -> str:
+    """Convierte codigos ASCII a texto."""
     return "".join(chr(codigo) for codigo in codigos)
 
 
-def cifrar_texto(texto: str, clave_publica: tuple[int, int]) -> list[int]:
-    """Cifra texto ASCII carácter por carácter."""
+def cifrar_texto(texto: str, clave_publica: Tuple[int, int]) -> List[int]:
+    """Cifra texto ASCII caracter por caracter."""
     return [cifrar_numero(codigo, clave_publica) for codigo in texto_a_codigos(texto)]
 
 
-def descifrar_texto(cifrado: list[int], clave_privada: tuple[int, int]) -> str:
+def descifrar_texto(cifrado: List[int], clave_privada: Tuple[int, int]) -> str:
     """Descifra una secuencia de bloques RSA."""
     codigos = [descifrar_numero(bloque, clave_privada) for bloque in cifrado]
     return codigos_a_texto(codigos)
 
 
-def procesar_rsa(texto: str, p: int, q: int, e: int | None = None) -> tuple[tuple[int, int], tuple[int, int], list[int]]:
+def procesar_rsa(texto: str, p: int, q: int, e: Optional[int] = None) -> Tuple[Tuple[int, int], Tuple[int, int], List[int]]:
     """Genera claves y cifra un texto en un solo paso."""
     clave_publica, clave_privada = generar_claves(p, q, e)
     return clave_publica, clave_privada, cifrar_texto(texto, clave_publica)

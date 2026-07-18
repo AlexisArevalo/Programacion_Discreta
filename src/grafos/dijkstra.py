@@ -1,13 +1,6 @@
 """Algoritmo de Dijkstra.
 
-Se trabaja con un grafo representado como un diccionario de adyacencia:
-
-    {
-        "A": {"B": 4, "C": 2},
-        "B": {"C": 1},
-    }
-
-Las aristas deben tener pesos no negativos.
+Se trabaja con un grafo representado como un diccionario de adyacencia.
 """
 
 from __future__ import annotations
@@ -15,10 +8,10 @@ from __future__ import annotations
 import json
 from heapq import heappop, heappush
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple
 
 
-Grafo = dict[str, dict[str, float]]
+Grafo = Dict[str, Dict[str, float]]
 
 
 def validar_grafo(grafo: Grafo) -> None:
@@ -28,10 +21,10 @@ def validar_grafo(grafo: Grafo) -> None:
 
     for nodo, vecinos in grafo.items():
         if not isinstance(vecinos, dict):
-            raise TypeError(f"Los vecinos de {nodo} deben estar en un diccionario.")
+            raise TypeError("Los vecinos de %s deben estar en un diccionario." % nodo)
         for vecino, peso in vecinos.items():
             if peso < 0:
-                raise ValueError(f"La arista {nodo} -> {vecino} tiene peso negativo.")
+                raise ValueError("La arista %s -> %s tiene peso negativo." % (nodo, vecino))
 
 
 def cargar_grafo_desde_json(ruta: str | Path) -> Grafo:
@@ -53,16 +46,16 @@ def cargar_grafo_desde_json(ruta: str | Path) -> Grafo:
     return grafo
 
 
-def dijkstra(grafo: Grafo, origen: str) -> tuple[dict[str, float], dict[str, str | None]]:
-    """Calcula las distancias mínimas desde un nodo origen."""
+def dijkstra(grafo: Grafo, origen: str) -> Tuple[Dict[str, float], Dict[str, Optional[str]]]:
+    """Calcula las distancias minimas desde un nodo origen."""
     validar_grafo(grafo)
     if origen not in grafo:
-        raise KeyError(f"El nodo origen {origen!r} no existe en el grafo.")
+        raise KeyError("El nodo origen %r no existe en el grafo." % origen)
 
     distancias = {nodo: float("inf") for nodo in grafo}
-    predecesores: dict[str, str | None] = {nodo: None for nodo in grafo}
-    visitados: set[str] = set()
-    cola: list[tuple[float, str]] = [(0.0, origen)]
+    predecesores: Dict[str, Optional[str]] = {nodo: None for nodo in grafo}
+    visitados: set = set()
+    cola: List[Tuple[float, str]] = [(0.0, origen)]
     distancias[origen] = 0.0
 
     while cola:
@@ -82,11 +75,11 @@ def dijkstra(grafo: Grafo, origen: str) -> tuple[dict[str, float], dict[str, str
 
 
 def reconstruir_camino(
-    predecesores: dict[str, str | None],
+    predecesores: Dict[str, Optional[str]],
     origen: str,
     destino: str,
-) -> list[str]:
-    """Reconstruye el camino mínimo usando la tabla de predecesores."""
+) -> List[str]:
+    """Reconstruye el camino minimo usando la tabla de predecesores."""
     if origen == destino:
         return [origen]
 
@@ -96,26 +89,26 @@ def reconstruir_camino(
     while actual != origen:
         actual = predecesores.get(actual)
         if actual is None:
-            raise ValueError(f"No existe camino desde {origen!r} hasta {destino!r}.")
+            raise ValueError("No existe camino desde %r hasta %r." % (origen, destino))
         camino.append(actual)
 
     camino.reverse()
     return camino
 
 
-def camino_mas_corto(grafo: Grafo, origen: str, destino: str) -> tuple[float, list[str]]:
-    """Calcula la distancia y el camino mínimo entre dos nodos."""
+def camino_mas_corto(grafo: Grafo, origen: str, destino: str) -> Tuple[float, List[str]]:
+    """Calcula la distancia y el camino minimo entre dos nodos."""
     distancias, predecesores = dijkstra(grafo, origen)
     distancia = distancias.get(destino, float("inf"))
     if distancia == float("inf"):
-        raise ValueError(f"No existe camino desde {origen!r} hasta {destino!r}.")
+        raise ValueError("No existe camino desde %r hasta %r." % (origen, destino))
 
     camino = reconstruir_camino(predecesores, origen, destino)
     return distancia, camino
 
 
-def resumen_distancias(grafo: Grafo, origen: str) -> dict[str, Any]:
-    """Devuelve un resumen útil para mostrar en consola."""
+def resumen_distancias(grafo: Grafo, origen: str) -> Dict[str, Any]:
+    """Devuelve un resumen util para mostrar en consola."""
     distancias, predecesores = dijkstra(grafo, origen)
     return {
         "origen": origen,

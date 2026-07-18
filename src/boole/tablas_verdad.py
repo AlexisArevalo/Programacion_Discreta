@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import ast
 import itertools
-from typing import Any
+from typing import Any, Dict, List
 
 
 ALLOWED_BOOLNODES = (
@@ -40,7 +40,7 @@ def _normalizar_expresion(expresion: str) -> str:
     )
 
 
-def validar_expresion(expresion: str) -> ast.Expression:
+def validar_expresion(expresion: str) -> ast.AST:
     """Valida que una expresion use solo nodos booleanos permitidos."""
     if not expresion or not expresion.strip():
         raise BooleanExpressionError("La expresion no puede estar vacia.")
@@ -50,7 +50,7 @@ def validar_expresion(expresion: str) -> ast.Expression:
 
     for nodo in ast.walk(arbol):
         if not isinstance(nodo, ALLOWED_BOOLNODES):
-            raise BooleanExpressionError(f"Nodo no permitido en la expresion: {type(nodo).__name__}")
+            raise BooleanExpressionError("Nodo no permitido en la expresion: %s" % type(nodo).__name__)
         if isinstance(nodo, ast.BoolOp) and not isinstance(nodo.op, (ast.And, ast.Or)):
             raise BooleanExpressionError("Solo se permiten operadores booleanos and/or.")
         if isinstance(nodo, ast.UnaryOp) and not isinstance(nodo.op, ast.Not):
@@ -63,14 +63,14 @@ def validar_expresion(expresion: str) -> ast.Expression:
     return arbol
 
 
-def obtener_variables(expresion: str) -> list[str]:
+def obtener_variables(expresion: str) -> List[str]:
     """Obtiene las variables usadas en una expresion booleana."""
     arbol = validar_expresion(expresion)
     variables = sorted({nodo.id for nodo in ast.walk(arbol) if isinstance(nodo, ast.Name)})
     return variables
 
 
-def evaluar_expresion(expresion: str, valores: dict[str, bool]) -> bool:
+def evaluar_expresion(expresion: str, valores: Dict[str, bool]) -> bool:
     """Evalua una expresion booleana con un conjunto de valores."""
     arbol = validar_expresion(expresion)
     contexto = {nombre: bool(valor) for nombre, valor in valores.items()}
@@ -78,18 +78,18 @@ def evaluar_expresion(expresion: str, valores: dict[str, bool]) -> bool:
     return bool(eval(codigo, {"__builtins__": {}}, contexto))
 
 
-def generar_combinaciones(variables: list[str]) -> list[dict[str, bool]]:
+def generar_combinaciones(variables: List[str]) -> List[Dict[str, bool]]:
     """Genera todas las combinaciones posibles de variables."""
-    combinaciones = []
+    combinaciones: List[Dict[str, bool]] = []
     for valores in itertools.product([False, True], repeat=len(variables)):
-        combinaciones.append(dict(zip(variables, valores, strict=False)))
+        combinaciones.append(dict(zip(variables, valores)))
     return combinaciones
 
 
-def tabla_verdad(expresion: str) -> list[dict[str, Any]]:
+def tabla_verdad(expresion: str) -> List[Dict[str, Any]]:
     """Construye la tabla de verdad de una expresion."""
     variables = obtener_variables(expresion)
-    filas = []
+    filas: List[Dict[str, Any]] = []
     for combinacion in generar_combinaciones(variables):
         resultado = evaluar_expresion(expresion, combinacion)
         fila = dict(combinacion)
@@ -109,7 +109,7 @@ def contar_falsos(expresion: str) -> int:
     return sum(1 for fila in filas if not fila["resultado"])
 
 
-def resumen_tabla_verdad(expresion: str) -> dict[str, Any]:
+def resumen_tabla_verdad(expresion: str) -> Dict[str, Any]:
     """Devuelve un resumen util para consola o pruebas."""
     filas = tabla_verdad(expresion)
     variables = obtener_variables(expresion)

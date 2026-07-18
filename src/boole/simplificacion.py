@@ -7,23 +7,23 @@ pocas variables.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict, List, Optional, Set
 
 from src.boole.tablas_verdad import obtener_variables, tabla_verdad
 
 
 def _a_binario(numero: int, bits: int) -> str:
-    return format(numero, f"0{bits}b")
+    return format(numero, "0%db" % bits)
 
 
 def _contar_unos(termino: str) -> int:
     return termino.count("1")
 
 
-def _combinar(a: str, b: str) -> str | None:
+def _combinar(a: str, b: str) -> Optional[str]:
     diferencias = 0
     resultado = []
-    for char_a, char_b in zip(a, b, strict=False):
+    for char_a, char_b in zip(a, b):
         if char_a == char_b:
             resultado.append(char_a)
         else:
@@ -35,13 +35,7 @@ def _combinar(a: str, b: str) -> str | None:
 
 
 def _cubierto(implicante: str, mintermino: str) -> bool:
-    return all(i == "-" or i == m for i, m in zip(implicante, mintermino, strict=False))
-
-
-def _formatear_literal(variable: str, bit: str) -> str:
-    if bit == "1":
-        return variable
-    return f"not {variable}"
+    return all(i == "-" or i == m for i, m in zip(implicante, mintermino))
 
 
 def forma_normal_disyuntiva(expresion: str) -> str:
@@ -51,16 +45,18 @@ def forma_normal_disyuntiva(expresion: str) -> str:
     if not variables:
         return "1" if tabla[0]["resultado"] else "0"
 
-    terminos = []
+    terminos: List[str] = []
     for indice, fila in enumerate(tabla):
         if fila["resultado"]:
             binario = _a_binario(indice, len(variables))
-            partes = [_formatear_literal(variable, bit) for variable, bit in zip(variables, binario, strict=False)]
+            partes = []
+            for variable, bit in zip(variables, binario):
+                partes.append(variable if bit == "1" else "not %s" % variable)
             terminos.append(" and ".join(partes))
 
     if not terminos:
         return "0"
-    return " or ".join(f"({termino})" for termino in terminos)
+    return " or ".join("(%s)" % termino for termino in terminos)
 
 
 def forma_normal_conjuntiva(expresion: str) -> str:
@@ -70,16 +66,18 @@ def forma_normal_conjuntiva(expresion: str) -> str:
     if not variables:
         return "0" if tabla[0]["resultado"] else "1"
 
-    terminos = []
+    terminos: List[str] = []
     for indice, fila in enumerate(tabla):
         if not fila["resultado"]:
             binario = _a_binario(indice, len(variables))
-            partes = [variable if bit == "0" else f"not {variable}" for variable, bit in zip(variables, binario, strict=False)]
+            partes = []
+            for variable, bit in zip(variables, binario):
+                partes.append(variable if bit == "0" else "not %s" % variable)
             terminos.append(" or ".join(partes))
 
     if not terminos:
         return "1"
-    return "and ".join(f"({termino})" for termino in terminos)
+    return " and ".join("(%s)" % termino for termino in terminos)
 
 
 def simplificar_sop(expresion: str) -> str:
@@ -95,16 +93,16 @@ def simplificar_sop(expresion: str) -> str:
     if not variables:
         return "1" if tabla[0]["resultado"] else "0"
 
-    grupos: dict[int, set[str]] = {}
+    grupos: Dict[int, Set[str]] = {}
     for mintermino in minterminos:
         termino = _a_binario(mintermino, len(variables))
         grupos.setdefault(_contar_unos(termino), set()).add(termino)
 
-    implicantes_primos: set[str] = set()
+    implicantes_primos: Set[str] = set()
 
     while grupos:
-        nuevos_grupos: dict[int, set[str]] = {}
-        usados: set[str] = set()
+        nuevos_grupos: Dict[int, Set[str]] = {}
+        usados: Set[str] = set()
         llaves = sorted(grupos)
 
         for indice, llave in enumerate(llaves[:-1]):
@@ -125,7 +123,7 @@ def simplificar_sop(expresion: str) -> str:
 
         grupos = nuevos_grupos
 
-    cobertura: list[str] = []
+    cobertura: List[str] = []
     minterminos_bin = [_a_binario(mintermino, len(variables)) for mintermino in minterminos]
     for implicante in sorted(implicantes_primos):
         if any(_cubierto(implicante, mintermino) for mintermino in minterminos_bin):
@@ -137,20 +135,20 @@ def simplificar_sop(expresion: str) -> str:
     terminos_simplificados = []
     for implicante in cobertura:
         partes = []
-        for variable, bit in zip(variables, implicante, strict=False):
+        for variable, bit in zip(variables, implicante):
             if bit == "1":
                 partes.append(variable)
             elif bit == "0":
-                partes.append(f"not {variable}")
+                partes.append("not %s" % variable)
         if partes:
             terminos_simplificados.append(" and ".join(partes))
         else:
             return "1"
 
-    return " or ".join(f"({termino})" for termino in terminos_simplificados)
+    return " or ".join("(%s)" % termino for termino in terminos_simplificados)
 
 
-def resumen_simplificacion(expresion: str) -> dict[str, Any]:
+def resumen_simplificacion(expresion: str) -> Dict[str, Any]:
     """Resume las distintas formas de la expresion booleana."""
     return {
         "expresion": expresion,

@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from math import log2
-from typing import Any
+from typing import Any, Dict, List
 
 
-def validar_distribucion(probabilidades: list[float]) -> None:
+def validar_distribucion(probabilidades: List[float]) -> None:
     """Valida que la distribucion sea coherente."""
     if not probabilidades:
         raise ValueError("La distribucion no puede estar vacia.")
@@ -18,7 +18,7 @@ def validar_distribucion(probabilidades: list[float]) -> None:
         raise ValueError("Las probabilidades deben sumar 1.")
 
 
-def entropia_shannon(probabilidades: list[float]) -> float:
+def entropia_shannon(probabilidades: List[float]) -> float:
     """Calcula la entropia de Shannon."""
     validar_distribucion(probabilidades)
     entropia = 0.0
@@ -28,7 +28,7 @@ def entropia_shannon(probabilidades: list[float]) -> float:
     return entropia
 
 
-def probabilidad_desde_frecuencias(frecuencias: list[int]) -> list[float]:
+def probabilidad_desde_frecuencias(frecuencias: List[int]) -> List[float]:
     """Convierte frecuencias a probabilidades."""
     if not frecuencias:
         raise ValueError("Se requieren frecuencias.")
@@ -41,12 +41,12 @@ def probabilidad_desde_frecuencias(frecuencias: list[int]) -> list[float]:
     return [frecuencia / total for frecuencia in frecuencias]
 
 
-def entropia_desde_frecuencias(frecuencias: list[int]) -> float:
+def entropia_desde_frecuencias(frecuencias: List[int]) -> float:
     """Calcula la entropia a partir de frecuencias absolutas."""
     return entropia_shannon(probabilidad_desde_frecuencias(frecuencias))
 
 
-def resumen_shannon(probabilidades: list[float]) -> dict[str, Any]:
+def resumen_shannon(probabilidades: List[float]) -> Dict[str, Any]:
     """Devuelve un resumen util para consola o pruebas."""
     return {
         "probabilidades": probabilidades,

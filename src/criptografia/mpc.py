@@ -1,19 +1,14 @@
-"""Implementación educativa de MPC.
-
-Este módulo modela una computación multipartita segura muy básica usando
-compartición aditiva de secretos. La idea es que varios participantes
-contribuyen con sus datos sin revelarlos directamente y luego se reconstruye
-el resultado agregado.
-"""
+"""Implementacion educativa de MPC."""
 
 from __future__ import annotations
 
 from fractions import Fraction
 from secrets import randbelow
+from typing import Dict, List, Optional, Union
 
 
-def _normalizar_modulo(modulo: int | None) -> int | None:
-    """Valida el módulo opcional usado para trabajar con enteros cerrados."""
+def _normalizar_modulo(modulo: Optional[int]) -> Optional[int]:
+    """Valida el modulo opcional usado para trabajar con enteros cerrados."""
     if modulo is None:
         return None
     if modulo <= 1:
@@ -21,14 +16,14 @@ def _normalizar_modulo(modulo: int | None) -> int | None:
     return modulo
 
 
-def compartir_secreto(secreto: int, num_participantes: int = 3, modulo: int | None = None) -> list[int]:
+def compartir_secreto(secreto: int, num_participantes: int = 3, modulo: Optional[int] = None) -> List[int]:
     """Divide un secreto en partes que solo permiten reconstruirlo en conjunto."""
     if num_participantes < 2:
         raise ValueError("Se requieren al menos 2 participantes.")
 
     modulo = _normalizar_modulo(modulo)
 
-    partes = []
+    partes: List[int] = []
     acumulado = 0
 
     for _ in range(num_participantes - 1):
@@ -50,7 +45,7 @@ def compartir_secreto(secreto: int, num_participantes: int = 3, modulo: int | No
     return partes
 
 
-def reconstruir_secreto(partes: list[int], modulo: int | None = None) -> int:
+def reconstruir_secreto(partes: List[int], modulo: Optional[int] = None) -> int:
     """Reconstruye el secreto a partir de sus partes."""
     if not partes:
         raise ValueError("Se requiere al menos una parte.")
@@ -62,8 +57,8 @@ def reconstruir_secreto(partes: list[int], modulo: int | None = None) -> int:
     return total
 
 
-def suma_privada(valores: list[int], num_participantes: int = 3, modulo: int | None = None) -> int:
-    """Calcula una suma privada usando compartición aditiva."""
+def suma_privada(valores: List[int], num_participantes: int = 3, modulo: Optional[int] = None) -> int:
+    """Calcula una suma privada usando comparticion aditiva."""
     if not valores:
         raise ValueError("Se requiere al menos un valor.")
 
@@ -78,7 +73,7 @@ def suma_privada(valores: list[int], num_participantes: int = 3, modulo: int | N
     return reconstruir_secreto(acumulado_por_participante, modulo=modulo)
 
 
-def promedio_privado(valores: list[int], num_participantes: int = 3, modulo: int | None = None) -> float:
+def promedio_privado(valores: List[int], num_participantes: int = 3, modulo: Optional[int] = None) -> float:
     """Calcula el promedio a partir de una suma privada."""
     if not valores:
         raise ValueError("Se requiere al menos un valor.")
@@ -87,8 +82,8 @@ def promedio_privado(valores: list[int], num_participantes: int = 3, modulo: int
     return float(Fraction(total, len(valores)))
 
 
-def ejecutar_mpc(valores: list[int], num_participantes: int = 3, modulo: int | None = None) -> dict[str, float | int | list[int]]:
-    """Ejecuta una demostración completa de MPC para una lista de enteros."""
+def ejecutar_mpc(valores: List[int], num_participantes: int = 3, modulo: Optional[int] = None) -> Dict[str, Union[float, int, List[int]]]:
+    """Ejecuta una demostracion completa de MPC para una lista de enteros."""
     modulo = _normalizar_modulo(modulo)
     total = suma_privada(valores, num_participantes=num_participantes, modulo=modulo)
     return {

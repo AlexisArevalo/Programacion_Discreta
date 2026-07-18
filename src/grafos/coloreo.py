@@ -1,40 +1,40 @@
 """Coloreo de grafos.
 
 Se usa un algoritmo voraz sencillo: se recorren los nodos en un orden
-determinista y se asigna el menor color disponible que no esté en conflicto
+determinista y se asigna el menor color disponible que no este en conflicto
 con los vecinos.
 """
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict
 
 
-Grafo = dict[str, dict[str, float]]
+Grafo = Dict[str, Dict[str, float]]
 
 
 def _validar_grafo_no_dirigido(grafo: Grafo) -> None:
-    """Valida que el grafo sea no dirigido y no vacío."""
+    """Valida que el grafo sea no dirigido y no vacio."""
     if not grafo:
         raise ValueError("El grafo no puede estar vacio.")
 
     for nodo, vecinos in grafo.items():
         if not isinstance(vecinos, dict):
-            raise TypeError(f"Los vecinos de {nodo} deben estar en un diccionario.")
+            raise TypeError("Los vecinos de %s deben estar en un diccionario." % nodo)
         for vecino, peso in vecinos.items():
             if peso < 0:
-                raise ValueError(f"La arista {nodo} -> {vecino} tiene peso negativo.")
+                raise ValueError("La arista %s -> %s tiene peso negativo." % (nodo, vecino))
             if vecino not in grafo:
-                raise KeyError(f"El vecino {vecino!r} no existe como nodo del grafo.")
+                raise KeyError("El vecino %r no existe como nodo del grafo." % vecino)
             if nodo not in grafo[vecino]:
-                raise ValueError(f"El grafo debe ser no dirigido: falta {vecino} -> {nodo}.")
+                raise ValueError("El grafo debe ser no dirigido: falta %s -> %s." % (vecino, nodo))
 
 
-def colorear_grafo(grafo: Grafo) -> dict[str, int]:
+def colorear_grafo(grafo: Grafo) -> Dict[str, int]:
     """Colorea un grafo usando la estrategia voraz."""
     _validar_grafo_no_dirigido(grafo)
 
-    coloreado: dict[str, int] = {}
+    coloreado: Dict[str, int] = {}
     for nodo in sorted(grafo):
         colores_vecinos = {coloreado[vecino] for vecino in grafo[nodo] if vecino in coloreado}
         color = 1
@@ -51,8 +51,8 @@ def numero_cromatico_aproximado(grafo: Grafo) -> int:
     return max(colores.values())
 
 
-def verificar_coloreo(grafo: Grafo, colores: dict[str, int]) -> bool:
-    """Comprueba que el coloreo sea válido."""
+def verificar_coloreo(grafo: Grafo, colores: Dict[str, int]) -> bool:
+    """Comprueba que el coloreo sea valido."""
     _validar_grafo_no_dirigido(grafo)
     for nodo, vecinos in grafo.items():
         if nodo not in colores:
@@ -63,8 +63,8 @@ def verificar_coloreo(grafo: Grafo, colores: dict[str, int]) -> bool:
     return True
 
 
-def resumen_coloreo(grafo: Grafo) -> dict[str, Any]:
-    """Devuelve un resumen útil para mostrar en consola."""
+def resumen_coloreo(grafo: Grafo) -> Dict[str, Any]:
+    """Devuelve un resumen util para mostrar en consola."""
     colores = colorear_grafo(grafo)
     return {
         "colores": colores,

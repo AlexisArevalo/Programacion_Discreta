@@ -11,6 +11,9 @@ if __package__ in (None, ""):
 
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from time import sleep
+from typing import List
+
 from src.boole.shannon import resumen_shannon
 from src.boole.simplificacion import resumen_simplificacion
 from src.boole.tablas_verdad import resumen_tabla_verdad
@@ -31,218 +34,378 @@ from src.grafos.dijkstra import camino_mas_corto, cargar_grafo_desde_json
 
 
 GRAFO_CIUDAD = "data/grafo_ciudad.json"
+ANCHO_MENU = 58
+RETRASO_LETRA = 0.01
+RETRASO_LINEA = 0.05
 
 
-def _leer_enteros_separados(texto: str) -> list[int]:
+def _imprimir_lento(texto: str, salto: bool = True, retraso: float = RETRASO_LETRA) -> None:
+    """Imprime texto caracter por caracter para dar efecto de escritura."""
+    for caracter in texto:
+        print(caracter, end="", flush=True)
+        sleep(retraso)
+    if salto:
+        print()
+
+
+def _linea() -> str:
+    return "=" * ANCHO_MENU
+
+
+def _separador() -> str:
+    return "-" * ANCHO_MENU
+
+
+def _vaciar_pantalla() -> None:
+    """Separa visualmente cada pantalla sin depender del sistema operativo."""
+    print("\n" * 2)
+
+
+def _mostrar_titulo(titulo: str, subtitulo: str = "") -> None:
+    """Muestra un encabezado visual para cada menu o submenu."""
+    _vaciar_pantalla()
+    print(_linea())
+    _imprimir_lento("TALLER 3 - PROGRAMACION DISCRETA", retraso=RETRASO_LETRA)
+    print(_separador())
+    _imprimir_lento(titulo, retraso=RETRASO_LETRA)
+    if subtitulo:
+        _imprimir_lento(subtitulo, retraso=RETRASO_LETRA)
+    print(_linea())
+    print()
+
+
+def _mostrar_opcion(numero: str, texto: str) -> None:
+    """Imprime una opcion de menu con espaciado consistente."""
+    _imprimir_lento("  %s) %s" % (numero, texto), retraso=RETRASO_LETRA)
+
+
+def _esperar_continuar() -> None:
+    """Pausa corta entre pantallas para mejorar la lectura."""
+    print()
+    sleep(RETRASO_LINEA)
+
+
+def _leer_enteros_separados(texto: str) -> List[int]:
     """Convierte una cadena de numeros separados por comas en una lista."""
     return [int(parte.strip()) for parte in texto.split(",") if parte.strip()]
 
 
 def _mostrar_menu_principal() -> None:
-    print("Taller 3 - Programacion Discreta")
-    print("1) Cifrado Cesar")
-    print("2) RSA")
-    print("3) MPC")
-    print("4) Dijkstra")
-    print("5) Cierre de estacion")
-    print("6) Coloreo de grafos")
-    print("7) Qubit")
-    print("8) Algebra de Boole")
-    print("9) Salir")
+    _mostrar_titulo("MENU PRINCIPAL", "Seleccione una opcion:")
+    _mostrar_opcion("1", "Cifrado Cesar")
+    _mostrar_opcion("2", "RSA")
+    _mostrar_opcion("3", "MPC")
+    _mostrar_opcion("4", "Dijkstra")
+    _mostrar_opcion("5", "Cierre de estacion")
+    _mostrar_opcion("6", "Coloreo de grafos")
+    _mostrar_opcion("7", "Qubit")
+    _mostrar_opcion("8", "Algebra de Boole")
+    _mostrar_opcion("9", "Salir")
+    print()
+
+
+def _preguntar_continuacion() -> str:
+    """Permite repetir el ejercicio, volver al menu principal o salir."""
+    print()
+    print(_separador())
+    _imprimir_lento("Desea continuar?", retraso=RETRASO_LETRA)
+    _mostrar_opcion("1", "Repetir ejercicio")
+    _mostrar_opcion("2", "Volver al menu principal")
+    _mostrar_opcion("9", "Salir")
+    print()
+    return input("Seleccione una opcion: ").strip()
 
 
 def _ejecutar_cesar() -> None:
-    print("Ejercicio 1: Cifrado Cesar")
-    print("1) Cifrar")
-    print("2) Descifrar")
+    while True:
+        _mostrar_titulo("EJERCICIO 1", "CIFRADO CESAR")
+        _mostrar_opcion("1", "Cifrar")
+        _mostrar_opcion("2", "Descifrar")
+        _mostrar_opcion("0", "Volver al menu principal")
+        print()
 
-    modo = input("Seleccione una opcion (1/2): ").strip()
-    texto = input("Ingrese el texto: ")
-    desplazamiento = int(input("Ingrese el desplazamiento: "))
+        modo = input("Seleccione una opcion: ").strip()
+        if modo == "0":
+            return
 
-    if modo == "1":
-        resultado = procesar_cesar(texto, desplazamiento, "cifrar")
-    elif modo == "2":
-        resultado = procesar_cesar(texto, desplazamiento, "descifrar")
-    else:
-        raise ValueError("Opcion no valida. Use 1 o 2.")
+        if modo not in ("1", "2"):
+            print("Opcion no valida. Use 0, 1 o 2.")
+            _esperar_continuar()
+            continue
 
-    print(f"Resultado: {resultado}")
+        texto = input("Ingrese el texto: ")
+        desplazamiento = int(input("Ingrese el desplazamiento: "))
+
+        if modo == "1":
+            resultado = procesar_cesar(texto, desplazamiento, "cifrar")
+        else:
+            resultado = procesar_cesar(texto, desplazamiento, "descifrar")
+
+        print("Resultado: %s" % resultado)
+
+        opcion = _preguntar_continuacion()
+        if opcion == "1":
+            continue
+        if opcion == "2":
+            return
+        if opcion == "9":
+            raise SystemExit(0)
+        print("Opcion no valida. Volviendo al menu principal.")
+        return
 
 
 def _ejecutar_rsa() -> None:
-    print("Ejercicio 2: RSA")
-    p = int(input("Ingrese el primo p: "))
-    q = int(input("Ingrese el primo q: "))
-    e_texto = input("Ingrese e (opcional, presione Enter para automatico): ").strip()
-    e = int(e_texto) if e_texto else None
+    while True:
+        _mostrar_titulo("EJERCICIO 2", "RSA")
+        p = int(input("Ingrese el primo p: "))
+        q = int(input("Ingrese el primo q: "))
+        e_texto = input("Ingrese e (opcional, presione Enter para automatico): ").strip()
+        e = int(e_texto) if e_texto else None
 
-    clave_publica, clave_privada = generar_claves(p, q, e)
-    print(f"Clave publica: {clave_publica}")
-    print(f"Clave privada: {clave_privada}")
+        clave_publica, clave_privada = generar_claves(p, q, e)
+        print("Clave publica: %s" % (clave_publica,))
+        print("Clave privada: %s" % (clave_privada,))
 
-    print("1) Cifrar texto")
-    print("2) Descifrar bloques")
-    modo = input("Seleccione una opcion (1/2): ").strip()
+        while True:
+            print()
+            _mostrar_opcion("1", "Cifrar texto")
+            _mostrar_opcion("2", "Descifrar bloques")
+            _mostrar_opcion("0", "Volver al menu principal")
+            print()
+            modo = input("Seleccione una opcion: ").strip()
 
-    if modo == "1":
-        texto = input("Ingrese el texto ASCII a cifrar: ")
-        cifrado = cifrar_texto(texto, clave_publica)
-        print(f"Bloques cifrados: {cifrado}")
-        return
+            if modo == "0":
+                return
 
-    if modo == "2":
-        bloques = _leer_enteros_separados(input("Ingrese los bloques separados por coma: "))
-        texto = descifrar_texto(bloques, clave_privada)
-        print(f"Texto descifrado: {texto}")
-        return
+            if modo == "1":
+                texto = input("Ingrese el texto ASCII a cifrar: ")
+                cifrado = cifrar_texto(texto, clave_publica)
+                print("Bloques cifrados: %s" % cifrado)
+            elif modo == "2":
+                bloques = _leer_enteros_separados(input("Ingrese los bloques separados por coma: "))
+                texto = descifrar_texto(bloques, clave_privada)
+                print("Texto descifrado: %s" % texto)
+            else:
+                print("Opcion no valida. Use 0, 1 o 2.")
+                _esperar_continuar()
+                continue
 
-    raise ValueError("Opcion no valida. Use 1 o 2.")
+            opcion = _preguntar_continuacion()
+            if opcion == "1":
+                continue
+            if opcion == "2":
+                return
+            if opcion == "9":
+                raise SystemExit(0)
+            print("Opcion no valida. Volviendo al menu principal.")
+            return
 
 
 def _ejecutar_mpc() -> None:
-    print("Ejercicio 3: MPC")
-    valores = _leer_enteros_separados(input("Ingrese los valores separados por coma: "))
-    num_participantes = int(input("Ingrese el numero de participantes: "))
-    modulo_texto = input("Ingrese el modulo opcional (Enter para omitir): ").strip()
-    modulo = int(modulo_texto) if modulo_texto else None
+    while True:
+        _mostrar_titulo("EJERCICIO 3", "MPC")
+        valores = _leer_enteros_separados(input("Ingrese los valores separados por coma: "))
+        num_participantes = int(input("Ingrese el numero de participantes: "))
+        modulo_texto = input("Ingrese el modulo opcional (Enter para omitir): ").strip()
+        modulo = int(modulo_texto) if modulo_texto else None
 
-    resultado = ejecutar_mpc(valores, num_participantes=num_participantes, modulo=modulo)
-    print(f"Resultado MPC: {resultado}")
+        resultado = ejecutar_mpc(valores, num_participantes=num_participantes, modulo=modulo)
+        print("Resultado MPC: %s" % resultado)
+
+        opcion = _preguntar_continuacion()
+        if opcion == "1":
+            continue
+        if opcion == "2":
+            return
+        if opcion == "9":
+            raise SystemExit(0)
+        print("Opcion no valida. Volviendo al menu principal.")
+        return
 
 
 def _ejecutar_dijkstra() -> None:
-    print("Ejercicio 4: Dijkstra")
-    grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
-    origen = input("Ingrese el nodo origen: ").strip()
-    destino = input("Ingrese el nodo destino: ").strip()
+    while True:
+        _mostrar_titulo("EJERCICIO 4", "DIJKSTRA")
+        grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
+        origen = input("Ingrese el nodo origen: ").strip()
+        destino = input("Ingrese el nodo destino: ").strip()
 
-    distancia, camino = camino_mas_corto(grafo, origen, destino)
-    print(f"Distancia minima: {distancia}")
-    print(f"Camino: {' -> '.join(camino)}")
+        distancia, camino = camino_mas_corto(grafo, origen, destino)
+        print("Distancia minima: %s" % distancia)
+        print("Camino: %s" % " -> ".join(camino))
+
+        opcion = _preguntar_continuacion()
+        if opcion == "1":
+            continue
+        if opcion == "2":
+            return
+        if opcion == "9":
+            raise SystemExit(0)
+        print("Opcion no valida. Volviendo al menu principal.")
+        return
 
 
 def _ejecutar_cierre_estacion() -> None:
-    print("Ejercicio 5: Cierre de estacion")
-    grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
-    estacion = input("Ingrese la estacion a evaluar: ").strip()
+    while True:
+        _mostrar_titulo("EJERCICIO 5", "CIERRE DE ESTACION")
+        grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
+        estacion = input("Ingrese la estacion a evaluar: ").strip()
 
-    resultado = analizar_cierre(grafo, estacion)
-    print(f"Estacion critica: {'si' if resultado['es_critica'] else 'no'}")
-    print(f"Estaciones criticas: {resultado['estaciones_criticas']}")
-    print(f"Componentes restantes: {resultado['componentes_restantes']}")
-    print(f"Numero de componentes: {resultado['numero_componentes']}")
+        resultado = analizar_cierre(grafo, estacion)
+        print("Estacion critica: %s" % ("si" if resultado["es_critica"] else "no"))
+        print("Estaciones criticas: %s" % resultado["estaciones_criticas"])
+        print("Componentes restantes: %s" % resultado["componentes_restantes"])
+        print("Numero de componentes: %s" % resultado["numero_componentes"])
+
+        opcion = _preguntar_continuacion()
+        if opcion == "1":
+            continue
+        if opcion == "2":
+            return
+        if opcion == "9":
+            raise SystemExit(0)
+        print("Opcion no valida. Volviendo al menu principal.")
+        return
 
 
 def _ejecutar_coloreo() -> None:
-    print("Ejercicio 6: Coloreo de grafos")
-    grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
-    resultado = resumen_coloreo(grafo)
-    print(f"Coloreo: {resultado['colores']}")
-    print(f"Numero de colores: {resultado['numero_colores']}")
-    print(f"Coloreo valido: {'si' if resultado['es_valido'] else 'no'}")
+    while True:
+        _mostrar_titulo("EJERCICIO 6", "COLOREO DE GRAFOS")
+        grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
+        resultado = resumen_coloreo(grafo)
+        print("Coloreo: %s" % resultado["colores"])
+        print("Numero de colores: %s" % resultado["numero_colores"])
+        print("Coloreo valido: %s" % ("si" if resultado["es_valido"] else "no"))
+
+        opcion = _preguntar_continuacion()
+        if opcion == "1":
+            continue
+        if opcion == "2":
+            return
+        if opcion == "9":
+            raise SystemExit(0)
+        print("Opcion no valida. Volviendo al menu principal.")
+        return
 
 
 def _ejecutar_qubit() -> None:
-    print("Ejercicio 7: Qubit")
-    print("1) Estado |0>")
-    print("2) Estado |1>")
-    print("3) Superposicion")
-    print("4) Aplicar puerta X a |0>")
-    print("5) Aplicar puerta H a |0>")
+    while True:
+        _mostrar_titulo("EJERCICIO 7", "QUBIT")
+        _mostrar_opcion("1", "Estado |0>")
+        _mostrar_opcion("2", "Estado |1>")
+        _mostrar_opcion("3", "Superposicion")
+        _mostrar_opcion("4", "Aplicar puerta X a |0>")
+        _mostrar_opcion("5", "Aplicar puerta H a |0>")
+        _mostrar_opcion("0", "Volver al menu principal")
+        print()
 
-    modo = input("Seleccione una opcion (1/2/3/4/5): ").strip()
-    if modo == "1":
-        print(f"Resumen: {resumen_qubit(ket_0())}")
-        return
-    if modo == "2":
-        print(f"Resumen: {resumen_qubit(ket_1())}")
-        return
-    if modo == "3":
-        print(f"Resumen: {resumen_qubit(superposicion())}")
-        return
-    if modo == "4":
-        print(f"Resumen: {resumen_qubit(aplicar_puerta_x(ket_0()))}")
-        return
-    if modo == "5":
-        print(f"Resumen: {resumen_qubit(aplicar_puerta_h(ket_0()))}")
-        return
+        modo = input("Seleccione una opcion: ").strip()
+        if modo == "0":
+            return
+        if modo == "1":
+            print("Resumen: %s" % resumen_qubit(ket_0()))
+        elif modo == "2":
+            print("Resumen: %s" % resumen_qubit(ket_1()))
+        elif modo == "3":
+            print("Resumen: %s" % resumen_qubit(superposicion()))
+        elif modo == "4":
+            print("Resumen: %s" % resumen_qubit(aplicar_puerta_x(ket_0())))
+        elif modo == "5":
+            print("Resumen: %s" % resumen_qubit(aplicar_puerta_h(ket_0())))
+        else:
+            print("Opcion no valida. Use 0, 1, 2, 3, 4 o 5.")
+            _esperar_continuar()
+            continue
 
-    raise ValueError("Opcion no valida. Use 1, 2, 3, 4 o 5.")
+        opcion = _preguntar_continuacion()
+        if opcion == "1":
+            continue
+        if opcion == "2":
+            return
+        if opcion == "9":
+            raise SystemExit(0)
+        print("Opcion no valida. Volviendo al menu principal.")
+        return
 
 
 def _ejecutar_boole() -> None:
-    print("Ejercicio 8: Algebra de Boole")
-    print("1) Tabla de verdad")
-    print("2) Simplificacion booleana")
-    print("3) Entropia de Shannon")
+    while True:
+        _mostrar_titulo("EJERCICIO 8", "ALGEBRA DE BOOLE")
+        _mostrar_opcion("1", "Tabla de verdad")
+        _mostrar_opcion("2", "Simplificacion booleana")
+        _mostrar_opcion("3", "Entropia de Shannon")
+        _mostrar_opcion("0", "Volver al menu principal")
+        print()
 
-    modo = input("Seleccione una opcion (1/2/3): ").strip()
-    if modo == "1":
-        expresion = input("Ingrese la expresion booleana (use and/or/not o ^): ").strip()
-        resultado = resumen_tabla_verdad(expresion)
-        print(f"Variables: {resultado['variables']}")
-        print(f"Filas: {resultado['filas']}")
-        print(f"Verdaderos: {resultado['verdaderos']}")
-        print(f"Falsos: {resultado['falsos']}")
+        modo = input("Seleccione una opcion: ").strip()
+        if modo == "0":
+            return
+        if modo == "1":
+            expresion = input("Ingrese la expresion booleana (use and/or/not o ^): ").strip()
+            resultado = resumen_tabla_verdad(expresion)
+            print("Variables: %s" % resultado["variables"])
+            print("Filas: %s" % resultado["filas"])
+            print("Verdaderos: %s" % resultado["verdaderos"])
+            print("Falsos: %s" % resultado["falsos"])
+        elif modo == "2":
+            expresion = input("Ingrese la expresion booleana: ").strip()
+            resultado = resumen_simplificacion(expresion)
+            print("FDN: %s" % resultado["fdn"])
+            print("FCN: %s" % resultado["fcn"])
+            print("Simplificada: %s" % resultado["simplificada"])
+        elif modo == "3":
+            frecuencias = _leer_enteros_separados(input("Ingrese las frecuencias separadas por coma: "))
+            total = sum(frecuencias)
+            if total <= 0:
+                raise ValueError("La suma de frecuencias debe ser mayor que 0.")
+            probabilidades = [float(f) / total for f in frecuencias]
+            resultado = resumen_shannon(probabilidades)
+            print("Probabilidades: %s" % resultado["probabilidades"])
+            print("Entropia: %s" % resultado["entropia"])
+        else:
+            print("Opcion no valida. Use 0, 1, 2 o 3.")
+            _esperar_continuar()
+            continue
+
+        opcion = _preguntar_continuacion()
+        if opcion == "1":
+            continue
+        if opcion == "2":
+            return
+        if opcion == "9":
+            raise SystemExit(0)
+        print("Opcion no valida. Volviendo al menu principal.")
         return
-
-    if modo == "2":
-        expresion = input("Ingrese la expresion booleana: ").strip()
-        resultado = resumen_simplificacion(expresion)
-        print(f"FDN: {resultado['fdn']}")
-        print(f"FCN: {resultado['fcn']}")
-        print(f"Simplificada: {resultado['simplificada']}")
-        return
-
-    if modo == "3":
-        frecuencias = _leer_enteros_separados(input("Ingrese las frecuencias separadas por coma: "))
-        total = sum(frecuencias)
-        if total <= 0:
-            raise ValueError("La suma de frecuencias debe ser mayor que 0.")
-        probabilidades = [f / total for f in frecuencias]
-        resultado = resumen_shannon(probabilidades)
-        print(f"Probabilidades: {resultado['probabilidades']}")
-        print(f"Entropia: {resultado['entropia']}")
-        return
-
-    raise ValueError("Opcion no valida. Use 1, 2 o 3.")
 
 
 def main() -> None:
     """Interfaz minima por consola para todos los ejercicios."""
-    _mostrar_menu_principal()
-    opcion = input("Seleccione una opcion: ").strip()
+    while True:
+        _mostrar_menu_principal()
+        opcion = input("Seleccione una opcion: ").strip()
 
-    if opcion == "1":
-        _ejecutar_cesar()
-        return
-    if opcion == "2":
-        _ejecutar_rsa()
-        return
-    if opcion == "3":
-        _ejecutar_mpc()
-        return
-    if opcion == "4":
-        _ejecutar_dijkstra()
-        return
-    if opcion == "5":
-        _ejecutar_cierre_estacion()
-        return
-    if opcion == "6":
-        _ejecutar_coloreo()
-        return
-    if opcion == "7":
-        _ejecutar_qubit()
-        return
-    if opcion == "8":
-        _ejecutar_boole()
-        return
-    if opcion == "9":
-        print("Salida solicitada.")
-        return
-
-    raise ValueError("Opcion no valida. Use 1, 2, 3, 4, 5, 6, 7, 8 o 9.")
+        if opcion == "1":
+            _ejecutar_cesar()
+        elif opcion == "2":
+            _ejecutar_rsa()
+        elif opcion == "3":
+            _ejecutar_mpc()
+        elif opcion == "4":
+            _ejecutar_dijkstra()
+        elif opcion == "5":
+            _ejecutar_cierre_estacion()
+        elif opcion == "6":
+            _ejecutar_coloreo()
+        elif opcion == "7":
+            _ejecutar_qubit()
+        elif opcion == "8":
+            _ejecutar_boole()
+        elif opcion == "9":
+            print("Salida solicitada.")
+            return
+        else:
+            print("Opcion no valida. Use 1, 2, 3, 4, 5, 6, 7, 8 o 9.")
+            continue
 
 
 if __name__ == "__main__":
