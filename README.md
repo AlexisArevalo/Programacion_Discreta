@@ -64,6 +64,7 @@ Programacion_Discreta/
 - Ejercicio 5 implementado: Cierre de estacion
 - Ejercicio 6 implementado: Coloreo de grafos
 - Ejercicio 7 implementado: Qubit
+- Ejercicio 8 implementado: Algebra de Boole
 
 ### Grafos
 
