@@ -1,6 +1,6 @@
 """Punto de entrada del proyecto.
 
-Por ahora se exponen los ejercicios 1, 2 y 3: César, RSA y MPC.
+Por ahora se exponen los ejercicios 1, 2, 3 y 4: César, RSA, MPC y Dijkstra.
 """
 
 from __future__ import annotations
@@ -8,6 +8,9 @@ from __future__ import annotations
 from src.criptografia.cesar import procesar_cesar
 from src.criptografia.mpc import ejecutar_mpc
 from src.criptografia.rsa import cifrar_texto, descifrar_texto, generar_claves
+from src.grafos.dijkstra import camino_mas_corto, cargar_grafo_desde_json
+
+GRAFO_CIUDAD = "data/grafo_ciudad.json"
 
 
 def _leer_enteros_separados(texto: str) -> list[int]:
@@ -16,12 +19,13 @@ def _leer_enteros_separados(texto: str) -> list[int]:
 
 
 def main() -> None:
-    """Interfaz mínima por consola para los ejercicios 1, 2 y 3."""
+    """Interfaz mínima por consola para los ejercicios 1, 2, 3 y 4."""
     print("Taller 3 - Programacion Discreta")
     print("1) Cifrado Cesar")
     print("2) RSA")
     print("3) MPC")
-    print("4) Salir")
+    print("4) Dijkstra")
+    print("5) Salir")
 
     opcion = input("Seleccione una opcion: ").strip()
 
@@ -85,10 +89,21 @@ def main() -> None:
         return
 
     if opcion == "4":
+        print("Ejercicio 4: Dijkstra")
+        grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
+        origen = input("Ingrese el nodo origen: ").strip()
+        destino = input("Ingrese el nodo destino: ").strip()
+
+        distancia, camino = camino_mas_corto(grafo, origen, destino)
+        print(f"Distancia minima: {distancia}")
+        print(f"Camino: {' -> '.join(camino)}")
+        return
+
+    if opcion == "5":
         print("Salida solicitada.")
         return
 
-    raise ValueError("Opcion no valida. Use 1, 2, 3 o 4.")
+    raise ValueError("Opcion no valida. Use 1, 2, 3, 4 o 5.")
 
 
 if __name__ == "__main__":
