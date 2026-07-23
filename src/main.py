@@ -28,7 +28,7 @@ from src.cuantica.qubit import (
 )
 from src.criptografia.cesar import procesar_cesar
 from src.criptografia.mpc import ejecutar_mpc
-from src.criptografia.rsa import cifrar_texto, descifrar_texto, generar_claves
+from src.criptografia.rsa import cifrar_numero, descifrar_numero, generar_claves
 from src.grafos.cierre_estacion import analizar_cierre
 from src.grafos.coloreo import resumen_coloreo
 from src.grafos.dijkstra import camino_mas_corto, cargar_grafo_desde_json
@@ -38,6 +38,7 @@ GRAFO_CIUDAD = Path(__file__).resolve().parent.parent / "data" / "grafo_ciudad.j
 ANCHO_MENU = 58
 RETRASO_LETRA = 0.01
 RETRASO_LINEA = 0.05
+RETRASO_RESULTADO = 0.25
 
 
 def _imprimir_lento(texto: str, salto: bool = True, retraso: float = RETRASO_LETRA) -> None:
@@ -78,6 +79,20 @@ def _mostrar_titulo(titulo: str, subtitulo: str = "") -> None:
 def _mostrar_opcion(numero: str, texto: str) -> None:
     """Imprime una opcion de menu con espaciado consistente."""
     _imprimir_lento("  %s) %s" % (numero, texto), retraso=RETRASO_LETRA)
+
+
+def _mostrar_resultado(lineas) -> None:
+    """Imprime resultados con pausas para facilitar la lectura."""
+    if isinstance(lineas, str):
+        lineas = [lineas]
+
+    print()
+    for indice, linea in enumerate(lineas):
+        _imprimir_lento(linea, retraso=RETRASO_LETRA)
+        if indice < len(lineas) - 1:
+            sleep(RETRASO_RESULTADO)
+    print()
+    sleep(RETRASO_LINEA)
 
 
 def _esperar_continuar() -> None:
@@ -163,12 +178,12 @@ def _pedir_lista_enteros(mensaje: str, minimo: int = None) -> List[int]:
 def _mostrar_menu_principal() -> None:
     _mostrar_titulo("MENU PRINCIPAL", "Seleccione una opcion:")
     _mostrar_opcion("1", "Cifrado Cesar")
-    _mostrar_opcion("2", "RSA")
-    _mostrar_opcion("3", "MPC")
-    _mostrar_opcion("4", "Dijkstra")
+    _mostrar_opcion("2", "Criptografia RSA")
+    _mostrar_opcion("3", "Computacion Multipartita Segura (MPC)")
+    _mostrar_opcion("4", "Algoritmo de Dijkstra")
     _mostrar_opcion("5", "Cierre de estacion")
     _mostrar_opcion("6", "Coloreo de grafos")
-    _mostrar_opcion("7", "Qubit")
+    _mostrar_opcion("7", "Simulacion de qubit")
     _mostrar_opcion("8", "Algebra de Boole")
     _mostrar_opcion("9", "Salir")
     print()
@@ -206,7 +221,7 @@ def _ejecutar_cesar() -> None:
         else:
             resultado = procesar_cesar(texto, desplazamiento, "descifrar")
 
-        print("Resultado: %s" % resultado)
+        _mostrar_resultado("Resultado: %s" % resultado)
 
         opcion = _preguntar_continuacion()
         if opcion == "1":
@@ -221,75 +236,71 @@ def _ejecutar_cesar() -> None:
 
 def _ejecutar_rsa() -> None:
     while True:
-        _mostrar_titulo("EJERCICIO 2", "RSA")
+        _mostrar_titulo("EJERCICIO 2", "CRIPTOGRAFIA RSA")
         p = _pedir_entero("Ingrese el primo p: ", minimo=2)
         q = _pedir_entero("Ingrese el primo q: ", minimo=2)
-        e = _pedir_entero_opcional("Ingrese e (opcional, presione Enter para automatico): ", minimo=2)
+        e = _pedir_entero("Ingrese el exponente publico e: ", minimo=2)
+        mensaje = _pedir_entero("Ingrese el mensaje entero M: ", minimo=0)
 
         try:
-            clave_publica, clave_privada = generar_claves(p, q, e)
+            clave_publica, clave_privada, n, phi = generar_claves(p, q, e)
         except ValueError as exc:
             print("No se pudieron generar las claves: %s" % exc)
             _esperar_continuar()
             continue
-        print("Clave publica: %s" % (clave_publica,))
-        print("Clave privada: %s" % (clave_privada,))
+        _mostrar_resultado([
+            "n = %s" % n,
+            "phi(n) = %s" % phi,
+            "Clave publica: %s" % (clave_publica,),
+            "Clave privada: %s" % (clave_privada,),
+        ])
 
-        while True:
-            print()
-            _mostrar_opcion("1", "Cifrar texto")
-            _mostrar_opcion("2", "Descifrar bloques")
-            _mostrar_opcion("0", "Volver al menu principal")
-            print()
-            modo = _pedir_opcion("Seleccione una opcion: ", ["0", "1", "2"])
+        try:
+            cifrado = cifrar_numero(mensaje, clave_publica)
+            recuperado = descifrar_numero(cifrado, clave_privada)
+        except ValueError as exc:
+            print("No se pudo procesar el mensaje: %s" % exc)
+            _esperar_continuar()
+            continue
 
-            if modo == "0":
-                return
+        _mostrar_resultado([
+            "M = %s" % mensaje,
+            "C = %s" % cifrado,
+            "M recuperado = %s" % recuperado,
+        ])
 
-            if modo == "1":
-                texto = _pedir_texto_no_vacio("Ingrese el texto ASCII a cifrar: ")
-                try:
-                    cifrado = cifrar_texto(texto, clave_publica)
-                except ValueError as exc:
-                    print("No se pudo cifrar el texto: %s" % exc)
-                    _esperar_continuar()
-                    continue
-                print("Bloques cifrados: %s" % cifrado)
-            elif modo == "2":
-                bloques = _pedir_lista_enteros("Ingrese los bloques separados por coma: ", minimo=0)
-                try:
-                    texto = descifrar_texto(bloques, clave_privada)
-                except ValueError as exc:
-                    print("No se pudo descifrar el mensaje: %s" % exc)
-                    _esperar_continuar()
-                    continue
-                print("Texto descifrado: %s" % texto)
-
-            opcion = _preguntar_continuacion()
-            if opcion == "1":
-                continue
-            if opcion == "2":
-                return
-            if opcion == "9":
-                raise SystemExit(0)
-            print("Opcion no valida. Volviendo al menu principal.")
+        opcion = _preguntar_continuacion()
+        if opcion == "1":
+            continue
+        if opcion == "2":
             return
+        if opcion == "9":
+            raise SystemExit(0)
+        print("Opcion no valida. Volviendo al menu principal.")
+        return
 
 
 def _ejecutar_mpc() -> None:
     while True:
-        _mostrar_titulo("EJERCICIO 3", "MPC")
-        valores = _pedir_lista_enteros("Ingrese los valores separados por coma: ")
-        num_participantes = _pedir_entero("Ingrese el numero de participantes: ", minimo=2)
-        modulo = _pedir_entero_opcional("Ingrese el modulo opcional (Enter para omitir): ", minimo=1)
+        _mostrar_titulo("EJERCICIO 3", "COMPUTACION MULTIPARTITA SEGURA")
+        notas = _pedir_lista_enteros("Ingrese las notas separadas por coma (0 a 50): ", minimo=0)
+        if any(nota > 50 for nota in notas):
+            print("Cada nota debe estar entre 0 y 50.")
+            _esperar_continuar()
+            continue
+        modulo = _pedir_entero_opcional("Ingrese el modulo opcional (Enter para usar 1000003): ", minimo=2)
 
         try:
-            resultado = ejecutar_mpc(valores, num_participantes=num_participantes, modulo=modulo)
+            resultado = ejecutar_mpc(notas, modulo=modulo)
         except ValueError as exc:
             print("No se pudo ejecutar MPC: %s" % exc)
             _esperar_continuar()
             continue
-        print("Resultado MPC: %s" % resultado)
+        _mostrar_resultado([
+            "Resultado MPC:",
+            "  Suma total: %s" % resultado["suma_total"],
+            "  Promedio: %s" % resultado["promedio"],
+        ])
 
         opcion = _preguntar_continuacion()
         if opcion == "1":
@@ -304,7 +315,7 @@ def _ejecutar_mpc() -> None:
 
 def _ejecutar_dijkstra() -> None:
     while True:
-        _mostrar_titulo("EJERCICIO 4", "DIJKSTRA")
+        _mostrar_titulo("EJERCICIO 4", "ALGORITMO DE DIJKSTRA")
         try:
             grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
         except (OSError, ValueError, TypeError) as exc:
@@ -321,8 +332,10 @@ def _ejecutar_dijkstra() -> None:
             print("No se pudo calcular el camino: %s" % exc)
             _esperar_continuar()
             continue
-        print("Distancia minima: %s" % distancia)
-        print("Camino: %s" % " -> ".join(camino))
+        _mostrar_resultado([
+            "Distancia minima: %s" % distancia,
+            "Camino: %s" % " -> ".join(camino),
+        ])
 
         opcion = _preguntar_continuacion()
         if opcion == "1":
@@ -352,10 +365,12 @@ def _ejecutar_cierre_estacion() -> None:
             print("No se pudo analizar la estacion: %s" % exc)
             _esperar_continuar()
             continue
-        print("Estacion critica: %s" % ("si" if resultado["es_critica"] else "no"))
-        print("Estaciones criticas: %s" % resultado["estaciones_criticas"])
-        print("Componentes restantes: %s" % resultado["componentes_restantes"])
-        print("Numero de componentes: %s" % resultado["numero_componentes"])
+        _mostrar_resultado([
+            "Estacion critica: %s" % ("si" if resultado["es_critica"] else "no"),
+            "Estaciones criticas: %s" % resultado["estaciones_criticas"],
+            "Componentes restantes: %s" % resultado["componentes_restantes"],
+            "Numero de componentes: %s" % resultado["numero_componentes"],
+        ])
 
         opcion = _preguntar_continuacion()
         if opcion == "1":
@@ -378,9 +393,11 @@ def _ejecutar_coloreo() -> None:
             print("No se pudo analizar el grafo: %s" % exc)
             _esperar_continuar()
             return
-        print("Coloreo: %s" % resultado["colores"])
-        print("Numero de colores: %s" % resultado["numero_colores"])
-        print("Coloreo valido: %s" % ("si" if resultado["es_valido"] else "no"))
+        _mostrar_resultado([
+            "Coloreo: %s" % resultado["colores"],
+            "Numero de colores: %s" % resultado["numero_colores"],
+            "Coloreo valido: %s" % ("si" if resultado["es_valido"] else "no"),
+        ])
 
         opcion = _preguntar_continuacion()
         if opcion == "1":
@@ -395,7 +412,7 @@ def _ejecutar_coloreo() -> None:
 
 def _ejecutar_qubit() -> None:
     while True:
-        _mostrar_titulo("EJERCICIO 7", "QUBIT")
+        _mostrar_titulo("EJERCICIO 7", "SIMULACION DE QUBIT")
         _mostrar_opcion("1", "Estado |0>")
         _mostrar_opcion("2", "Estado |1>")
         _mostrar_opcion("3", "Superposicion")
@@ -408,15 +425,15 @@ def _ejecutar_qubit() -> None:
         if modo == "0":
             return
         if modo == "1":
-            print("Resumen: %s" % resumen_qubit(ket_0()))
+            _mostrar_resultado("Resumen: %s" % resumen_qubit(ket_0()))
         elif modo == "2":
-            print("Resumen: %s" % resumen_qubit(ket_1()))
+            _mostrar_resultado("Resumen: %s" % resumen_qubit(ket_1()))
         elif modo == "3":
-            print("Resumen: %s" % resumen_qubit(superposicion()))
+            _mostrar_resultado("Resumen: %s" % resumen_qubit(superposicion()))
         elif modo == "4":
-            print("Resumen: %s" % resumen_qubit(aplicar_puerta_x(ket_0())))
+            _mostrar_resultado("Resumen: %s" % resumen_qubit(aplicar_puerta_x(ket_0())))
         elif modo == "5":
-            print("Resumen: %s" % resumen_qubit(aplicar_puerta_h(ket_0())))
+            _mostrar_resultado("Resumen: %s" % resumen_qubit(aplicar_puerta_h(ket_0())))
         else:
             print("Opcion no valida. Use 0, 1, 2, 3, 4 o 5.")
             _esperar_continuar()
@@ -453,10 +470,12 @@ def _ejecutar_boole() -> None:
                 print("No se pudo evaluar la expresion: %s" % exc)
                 _esperar_continuar()
                 continue
-            print("Variables: %s" % resultado["variables"])
-            print("Filas: %s" % resultado["filas"])
-            print("Verdaderos: %s" % resultado["verdaderos"])
-            print("Falsos: %s" % resultado["falsos"])
+            _mostrar_resultado([
+                "Variables: %s" % resultado["variables"],
+                "Filas: %s" % resultado["filas"],
+                "Verdaderos: %s" % resultado["verdaderos"],
+                "Falsos: %s" % resultado["falsos"],
+            ])
         elif modo == "2":
             expresion = _pedir_texto_no_vacio("Ingrese la expresion booleana: ")
             try:
@@ -465,9 +484,11 @@ def _ejecutar_boole() -> None:
                 print("No se pudo simplificar la expresion: %s" % exc)
                 _esperar_continuar()
                 continue
-            print("FDN: %s" % resultado["fdn"])
-            print("FCN: %s" % resultado["fcn"])
-            print("Simplificada: %s" % resultado["simplificada"])
+            _mostrar_resultado([
+                "FDN: %s" % resultado["fdn"],
+                "FCN: %s" % resultado["fcn"],
+                "Simplificada: %s" % resultado["simplificada"],
+            ])
         elif modo == "3":
             frecuencias = _pedir_lista_enteros("Ingrese las frecuencias separadas por coma: ", minimo=0)
             try:
@@ -485,8 +506,10 @@ def _ejecutar_boole() -> None:
                 print("No se pudo calcular Shannon: %s" % exc)
                 _esperar_continuar()
                 continue
-            print("Probabilidades: %s" % resultado["probabilidades"])
-            print("Entropia: %s" % resultado["entropia"])
+            _mostrar_resultado([
+                "Probabilidades: %s" % resultado["probabilidades"],
+                "Entropia: %s" % resultado["entropia"],
+            ])
         else:
             print("Opcion no valida. Use 0, 1, 2 o 3.")
             _esperar_continuar()

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from math import gcd
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 
 def es_primo(numero: int) -> bool:
@@ -30,38 +30,45 @@ def _validar_primos(p: int, q: int) -> None:
         raise ValueError("p y q deben ser primos distintos.")
 
 
-def _e_por_defecto(phi: int) -> int:
-    """Busca un exponente publico pequeno y coprimo con phi."""
-    candidato = 65537
-    if candidato < phi and gcd(candidato, phi) == 1:
-        return candidato
+def euclides_extendido(a: int, b: int) -> Tuple[int, int, int]:
+    """Retorna gcd(a, b) y coeficientes de Bezout."""
+    if b == 0:
+        return abs(a), 1 if a >= 0 else -1, 0
 
-    candidato = 3
-    while candidato < phi:
-        if gcd(candidato, phi) == 1:
-            return candidato
-        candidato += 2
-
-    raise ValueError("No se pudo encontrar un exponente publico valido.")
+    gcd_ab, x1, y1 = euclides_extendido(b, a % b)
+    x = y1
+    y = x1 - (a // b) * y1
+    return gcd_ab, x, y
 
 
-def generar_claves(p: int, q: int, e: Optional[int] = None) -> Tuple[Tuple[int, int], Tuple[int, int]]:
-    """Genera la clave publica y privada de RSA."""
+def inverso_modular(e: int, modulo: int) -> int:
+    """Calcula el inverso modular de e modulo `modulo`."""
+    if modulo <= 0:
+        raise ValueError("El modulo debe ser mayor que 0.")
+
+    gcd_em, x, _ = euclides_extendido(e, modulo)
+    if gcd_em != 1:
+        raise ValueError("e no tiene inverso modular con phi(n).")
+    return x % modulo
+
+
+def generar_claves(p: int, q: int, e: int) -> Tuple[Tuple[int, int], Tuple[int, int], int, int]:
+    """Genera n, phi(n), la clave publica y la clave privada de RSA."""
     _validar_primos(p, q)
+    if e is None:
+        raise ValueError("e es obligatorio.")
 
     n = p * q
     phi = (p - 1) * (q - 1)
 
-    if e is None:
-        e = _e_por_defecto(phi)
-    elif not (1 < e < phi):
+    if not (1 < e < phi):
         raise ValueError("e debe estar entre 1 y phi(n).")
 
     if gcd(e, phi) != 1:
         raise ValueError("e debe ser coprimo con phi(n).")
 
-    d = pow(e, -1, phi)
-    return (e, n), (d, n)
+    d = inverso_modular(e, phi)
+    return (e, n), (d, n), n, phi
 
 
 def cifrar_numero(mensaje: int, clave_publica: Tuple[int, int]) -> int:
@@ -101,7 +108,7 @@ def descifrar_texto(cifrado: List[int], clave_privada: Tuple[int, int]) -> str:
     return codigos_a_texto(codigos)
 
 
-def procesar_rsa(texto: str, p: int, q: int, e: Optional[int] = None) -> Tuple[Tuple[int, int], Tuple[int, int], List[int]]:
+def procesar_rsa(texto: str, p: int, q: int, e: int) -> Tuple[Tuple[int, int], Tuple[int, int], List[int]]:
     """Genera claves y cifra un texto en un solo paso."""
-    clave_publica, clave_privada = generar_claves(p, q, e)
+    clave_publica, clave_privada, _, _ = generar_claves(p, q, e)
     return clave_publica, clave_privada, cifrar_texto(texto, clave_publica)
