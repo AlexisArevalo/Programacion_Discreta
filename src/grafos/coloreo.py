@@ -7,7 +7,7 @@ con los vecinos.
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 
 Grafo = Dict[str, Dict[str, float]]
@@ -66,8 +66,16 @@ def verificar_coloreo(grafo: Grafo, colores: Dict[str, int]) -> bool:
 def resumen_coloreo(grafo: Grafo) -> Dict[str, Any]:
     """Devuelve un resumen util para mostrar en consola."""
     colores = colorear_grafo(grafo)
+    vertices_por_color: Dict[int, List[str]] = {}
+    for vertice, color in colores.items():
+        vertices_por_color.setdefault(color, []).append(vertice)
+
+    for vertice_list in vertices_por_color.values():
+        vertice_list.sort()
+
     return {
         "colores": colores,
         "numero_colores": numero_cromatico_aproximado(grafo),
         "es_valido": verificar_coloreo(grafo, colores),
+        "vertices_por_color": dict(sorted(vertices_por_color.items())),
     }

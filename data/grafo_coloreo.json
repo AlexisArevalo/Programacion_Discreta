@@ -1,0 +1,12 @@
+{
+  "ALG": {"CAL": 1, "FIS": 1, "BD": 1},
+  "BD": {"ALG": 1, "RED": 1, "EST": 1},
+  "CAL": {"ALG": 1, "POO": 1, "RED": 1},
+  "EST": {"BD": 1, "QUI": 1},
+  "ETH": {"POO": 1, "IA": 1, "QUI": 1},
+  "FIS": {"ALG": 1, "POO": 1, "IA": 1},
+  "IA": {"FIS": 1, "POO": 1, "ETH": 1},
+  "POO": {"CAL": 1, "FIS": 1, "IA": 1, "ETH": 1},
+  "QUI": {"EST": 1, "ETH": 1, "RED": 1},
+  "RED": {"BD": 1, "CAL": 1, "QUI": 1}
+}

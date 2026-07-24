@@ -73,20 +73,23 @@ Programacion_Discreta/
 ### 4. Algoritmo de Dijkstra
 
 - Calcula la ruta mas corta entre dos nodos de un grafo cargado desde `data/grafo_ciudad.json`.
+- Muestra automaticamente el grafo y los nodos disponibles antes de pedir origen y destino.
 - Muestra la distancia minima y el camino encontrado.
 
 ### 5. Cierre de estacion
 
 - Usa un grafo separado para medir el impacto del cierre de una estacion.
 - Compara rutas antes y despues de cerrar la estacion `D`.
+- La red usa como ejemplo los pares `A-D`, `A-E`, `A-F`, `B-D`, `B-F` y `C-E`.
 - Muestra una tabla con origen, destino, distancia antes, distancia despues, diferencia y estado.
-- Reporta qué pares aumentan su distancia y cuáles quedan desconectados.
-- El ejemplo incluido prueba al menos cinco pares origen-destino.
+- Reporta que pares aumentan su distancia y cuales quedan desconectados.
+- El cierre de `D` produce un impacto visible porque desconecta algunos pares y alarga otros.
 
 ### 6. Coloreo de grafos
 
-- Aplica coloreo greedy sobre el grafo de ciudad.
-- Muestra la asignacion de colores, el numero de colores usados y si el coloreo es valido.
+- Aplica coloreo greedy sobre un grafo de conflictos con 10 vertices.
+- Muestra la asignacion de colores, el numero de colores usados, si el coloreo es valido y los vertices por color.
+- La interpretacion es la de organizacion de examenes sin choques entre materias.
 
 ### 7. Simulacion de qubit
 
@@ -147,7 +150,7 @@ python -m unittest discover -s tests
 Ejecutar pruebas puntuales:
 
 ```bash
-python -m unittest tests.test_cesar tests.test_rsa tests.test_mpc
+python -m unittest tests.test_cesar tests.test_rsa tests.test_mpc tests.test_cierre_estacion
 ```
 
 ---

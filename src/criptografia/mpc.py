@@ -82,3 +82,38 @@ def ejecutar_mpc(valores: List[int], modulo: Optional[int] = None) -> Dict[str, 
         "suma_total": total,
         "promedio": promedio_privado(valores, modulo=modulo),
     }
+
+
+def simular_mpc(valores: List[int], modulo: Optional[int] = None) -> Dict[str, object]:
+    """Simula el reparto y la reconstruccion paso a paso."""
+    if not valores:
+        raise ValueError("Se requiere al menos un valor.")
+
+    modulo = _normalizar_modulo(modulo)
+    acumulado_por_servidor = [0] * NUM_SERVIDORES
+    pasos: List[Dict[str, object]] = []
+
+    for indice, valor in enumerate(valores, start=1):
+        partes = compartir_secreto(valor, modulo=modulo)
+        for servidor, parte in enumerate(partes):
+            acumulado_por_servidor[servidor] = (acumulado_por_servidor[servidor] + parte) % modulo
+
+        suma_parcial = reconstruir_secreto(acumulado_por_servidor, modulo=modulo)
+        pasos.append(
+            {
+                "numero_nota": indice,
+                "nota": valor,
+                "partes": partes,
+                "acumulado_por_servidor": acumulado_por_servidor.copy(),
+                "suma_parcial": suma_parcial,
+            }
+        )
+
+    suma_total = reconstruir_secreto(acumulado_por_servidor, modulo=modulo)
+    return {
+        "modulo": modulo,
+        "pasos": pasos,
+        "acumulado_por_servidor": acumulado_por_servidor,
+        "suma_total": suma_total,
+        "promedio": float(Fraction(suma_total, len(valores))),
+    }

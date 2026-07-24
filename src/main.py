@@ -27,7 +27,7 @@ from src.cuantica.qubit import (
     superposicion,
 )
 from src.criptografia.cesar import procesar_cesar
-from src.criptografia.mpc import ejecutar_mpc
+from src.criptografia.mpc import ejecutar_mpc, simular_mpc
 from src.criptografia.rsa import cifrar_numero, descifrar_numero, generar_claves
 from src.grafos.cierre_estacion import analizar_impacto_cierre
 from src.grafos.coloreo import resumen_coloreo
@@ -36,6 +36,7 @@ from src.grafos.dijkstra import camino_mas_corto, cargar_grafo_desde_json
 
 GRAFO_CIUDAD = Path(__file__).resolve().parent.parent / "data" / "grafo_ciudad.json"
 GRAFO_CIERRE = Path(__file__).resolve().parent.parent / "data" / "grafo_cierre.json"
+GRAFO_COLOREO = Path(__file__).resolve().parent.parent / "data" / "grafo_coloreo.json"
 ANCHO_MENU = 58
 RETRASO_LETRA = 0.01
 RETRASO_LINEA = 0.05
@@ -61,7 +62,7 @@ def _separador() -> str:
 
 def _vaciar_pantalla() -> None:
     """Separa visualmente cada pantalla sin depender del sistema operativo."""
-    print("\n" * 2)
+    print()
 
 
 def _mostrar_titulo(titulo: str, subtitulo: str = "") -> None:
@@ -105,6 +106,24 @@ def _formatear_distancia(valor: Optional[float]) -> str:
     if isinstance(valor, float) and valor.is_integer():
         return str(int(valor))
     return str(valor)
+
+
+def _mostrar_grafo_ascii(grafo) -> None:
+    """Muestra una vista simple del grafo en consola."""
+    aristas = set()
+    lineas = ["Nodos disponibles: %s" % ", ".join(sorted(grafo.keys())), "", "Conexiones:"]
+
+    for origen, vecinos in sorted(grafo.items()):
+        adyacencias = []
+        for destino, peso in sorted(vecinos.items()):
+            arista = tuple(sorted((origen, destino))) + (peso,)
+            if arista in aristas:
+                continue
+            aristas.add(arista)
+            adyacencias.append("%s(%s)" % (destino, _formatear_distancia(peso)))
+        if adyacencias:
+            lineas.append("%s -> %s" % (origen, ", ".join(adyacencias)))
+    _mostrar_resultado(lineas)
 
 
 def _esperar_continuar() -> None:
@@ -303,16 +322,36 @@ def _ejecutar_mpc() -> None:
         modulo = _pedir_entero_opcional("Ingrese el modulo opcional (Enter para usar 1000003): ", minimo=2)
 
         try:
-            resultado = ejecutar_mpc(notas, modulo=modulo)
+            resultado = simular_mpc(notas, modulo=modulo)
         except ValueError as exc:
             print("No se pudo ejecutar MPC: %s" % exc)
             _esperar_continuar()
             continue
-        _mostrar_resultado([
-            "Resultado MPC:",
-            "  Suma total: %s" % resultado["suma_total"],
-            "  Promedio: %s" % resultado["promedio"],
+        pasos = resultado["pasos"]
+        lineas = [
+            "Modulo usado: %s" % resultado["modulo"],
+            "",
+            "Proceso de reparto por servidor:",
+        ]
+        for paso in pasos:
+            lineas.append("Nota %s = %s" % (paso["numero_nota"], paso["nota"]))
+            lineas.append(
+                "  Servidor 1 recibe %s | Servidor 2 recibe %s | Servidor 3 recibe %s"
+                % tuple(paso["partes"])
+            )
+            lineas.append(
+                "  Acumulado S1=%s, S2=%s, S3=%s"
+                % tuple(paso["acumulado_por_servidor"])
+            )
+            lineas.append("  Reconstruccion parcial = %s" % paso["suma_parcial"])
+            lineas.append("")
+
+        lineas.extend([
+            "Reconstruccion final:",
+            "  Suma total = %s" % resultado["suma_total"],
+            "  Promedio = %s" % resultado["promedio"],
         ])
+        _mostrar_resultado(lineas)
 
         opcion = _preguntar_continuacion()
         if opcion == "1":
@@ -335,8 +374,19 @@ def _ejecutar_dijkstra() -> None:
             _esperar_continuar()
             return
 
-        origen = _pedir_texto_no_vacio("Ingrese el nodo origen: ")
-        destino = _pedir_texto_no_vacio("Ingrese el nodo destino: ")
+        _mostrar_resultado([
+            "Grafo de ciudad cargado.",
+            "Nodos disponibles: %s" % ", ".join(sorted(grafo.keys())),
+        ])
+        _mostrar_grafo_ascii(grafo)
+
+        origen = _pedir_texto_no_vacio("Nodo origen: ")
+        destino = _pedir_texto_no_vacio("Nodo destino: ")
+
+        if origen not in grafo or destino not in grafo:
+            print("El origen y/o el destino no existen en el grafo.")
+            _esperar_continuar()
+            continue
 
         try:
             distancia, camino = camino_mas_corto(grafo, origen, destino)
@@ -345,8 +395,9 @@ def _ejecutar_dijkstra() -> None:
             _esperar_continuar()
             continue
         _mostrar_resultado([
-            "Distancia minima: %s" % distancia,
-            "Camino: %s" % " -> ".join(camino),
+            "Resultado de Dijkstra:",
+            "  Distancia minima: %s" % distancia,
+            "  Camino: %s" % " -> ".join(camino),
         ])
 
         opcion = _preguntar_continuacion()
@@ -386,6 +437,13 @@ def _ejecutar_cierre_estacion() -> None:
             _esperar_continuar()
             continue
 
+        resumen = [
+            "Estacion cerrada: %s" % resultado["estacion_cerrada"],
+            "Pares comparados: %s" % len(resultado["tabla"]),
+            "Se analiza el impacto sobre la red antes y despues del cierre.",
+            "",
+            "Tabla de impacto:",
+        ]
         tabla = [
             "Origen   Destino   Antes      Despues   Dif.       Estado",
             "--------------------------------------------------------",
@@ -403,15 +461,12 @@ def _ejecutar_cierre_estacion() -> None:
                     fila["estado"],
                 )
             )
-        tabla.extend(
-            [
-                "",
-                "Estacion cerrada: %s" % resultado["estacion_cerrada"],
-                "Pares con aumento: %s" % resultado["pares_con_aumento"],
-                "Pares desconectados: %s" % resultado["pares_desconectados"],
-            ]
-        )
-        _mostrar_resultado(tabla)
+        tabla.extend([
+            "",
+            "Pares con aumento: %s" % resultado["pares_con_aumento"],
+            "Pares desconectados: %s" % resultado["pares_desconectados"],
+        ])
+        _mostrar_resultado(resumen + tabla)
 
         opcion = _preguntar_continuacion()
         if opcion == "1":
@@ -428,16 +483,20 @@ def _ejecutar_coloreo() -> None:
     while True:
         _mostrar_titulo("EJERCICIO 6", "COLOREO DE GRAFOS")
         try:
-            grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
+            grafo = cargar_grafo_desde_json(GRAFO_COLOREO)
+            if len(grafo) < 10:
+                raise ValueError("El grafo de coloreo debe tener al menos 10 vertices.")
             resultado = resumen_coloreo(grafo)
         except (OSError, ValueError, TypeError) as exc:
             print("No se pudo analizar el grafo: %s" % exc)
             _esperar_continuar()
             return
         _mostrar_resultado([
+            "Grafo de exámenes cargado con %s vertices." % len(grafo),
             "Coloreo: %s" % resultado["colores"],
             "Numero de colores: %s" % resultado["numero_colores"],
             "Coloreo valido: %s" % ("si" if resultado["es_valido"] else "no"),
+            "Vertices por color: %s" % resultado["vertices_por_color"],
         ])
 
         opcion = _preguntar_continuacion()
