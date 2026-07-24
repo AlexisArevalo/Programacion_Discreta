@@ -29,12 +29,13 @@ from src.cuantica.qubit import (
 from src.criptografia.cesar import procesar_cesar
 from src.criptografia.mpc import ejecutar_mpc
 from src.criptografia.rsa import cifrar_numero, descifrar_numero, generar_claves
-from src.grafos.cierre_estacion import analizar_cierre
+from src.grafos.cierre_estacion import analizar_impacto_cierre
 from src.grafos.coloreo import resumen_coloreo
 from src.grafos.dijkstra import camino_mas_corto, cargar_grafo_desde_json
 
 
 GRAFO_CIUDAD = Path(__file__).resolve().parent.parent / "data" / "grafo_ciudad.json"
+GRAFO_CIERRE = Path(__file__).resolve().parent.parent / "data" / "grafo_cierre.json"
 ANCHO_MENU = 58
 RETRASO_LETRA = 0.01
 RETRASO_LINEA = 0.05
@@ -93,6 +94,17 @@ def _mostrar_resultado(lineas) -> None:
             sleep(RETRASO_RESULTADO)
     print()
     sleep(RETRASO_LINEA)
+
+
+def _formatear_distancia(valor: Optional[float]) -> str:
+    """Convierte distancias para mostrarlas en tabla."""
+    if valor is None:
+        return "-"
+    if valor == float("inf"):
+        return "sin camino"
+    if isinstance(valor, float) and valor.is_integer():
+        return str(int(valor))
+    return str(valor)
 
 
 def _esperar_continuar() -> None:
@@ -350,27 +362,56 @@ def _ejecutar_dijkstra() -> None:
 
 def _ejecutar_cierre_estacion() -> None:
     while True:
-        _mostrar_titulo("EJERCICIO 5", "CIERRE DE ESTACION")
+        _mostrar_titulo("EJERCICIO 5", "CIERRE DE UNA ESTACION")
         try:
-            grafo = cargar_grafo_desde_json(GRAFO_CIUDAD)
+            grafo = cargar_grafo_desde_json(GRAFO_CIERRE)
         except (OSError, ValueError, TypeError) as exc:
             print("No se pudo cargar el grafo: %s" % exc)
             _esperar_continuar()
             return
-        estacion = _pedir_texto_no_vacio("Ingrese la estacion a evaluar: ")
+        estacion = "D"
+        pares = [
+            ("A", "D"),
+            ("A", "E"),
+            ("A", "F"),
+            ("B", "D"),
+            ("B", "F"),
+            ("C", "E"),
+        ]
 
         try:
-            resultado = analizar_cierre(grafo, estacion)
+            resultado = analizar_impacto_cierre(grafo, estacion, pares)
         except (KeyError, ValueError, TypeError) as exc:
-            print("No se pudo analizar la estacion: %s" % exc)
+            print("No se pudo analizar el cierre: %s" % exc)
             _esperar_continuar()
             continue
-        _mostrar_resultado([
-            "Estacion critica: %s" % ("si" if resultado["es_critica"] else "no"),
-            "Estaciones criticas: %s" % resultado["estaciones_criticas"],
-            "Componentes restantes: %s" % resultado["componentes_restantes"],
-            "Numero de componentes: %s" % resultado["numero_componentes"],
-        ])
+
+        tabla = [
+            "Origen   Destino   Antes      Despues   Dif.       Estado",
+            "--------------------------------------------------------",
+        ]
+        for fila in resultado["tabla"]:
+            diferencia = _formatear_distancia(fila["diferencia"])
+            tabla.append(
+                "%-8s %-8s %-10s %-10s %-10s %-12s"
+                % (
+                    fila["origen"],
+                    fila["destino"],
+                    _formatear_distancia(fila["distancia_antes"]),
+                    _formatear_distancia(fila["distancia_despues"]),
+                    diferencia,
+                    fila["estado"],
+                )
+            )
+        tabla.extend(
+            [
+                "",
+                "Estacion cerrada: %s" % resultado["estacion_cerrada"],
+                "Pares con aumento: %s" % resultado["pares_con_aumento"],
+                "Pares desconectados: %s" % resultado["pares_desconectados"],
+            ]
+        )
+        _mostrar_resultado(tabla)
 
         opcion = _preguntar_continuacion()
         if opcion == "1":

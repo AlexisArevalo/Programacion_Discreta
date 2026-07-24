@@ -77,8 +77,11 @@ Programacion_Discreta/
 
 ### 5. Cierre de estacion
 
-- Analiza si una estacion es critica dentro del grafo de ciudad.
-- Reporta la estacion evaluada, las estaciones criticas y los componentes restantes.
+- Usa un grafo separado para medir el impacto del cierre de una estacion.
+- Compara rutas antes y despues de cerrar la estacion `D`.
+- Muestra una tabla con origen, destino, distancia antes, distancia despues, diferencia y estado.
+- Reporta qué pares aumentan su distancia y cuáles quedan desconectados.
+- El ejemplo incluido prueba al menos cinco pares origen-destino.
 
 ### 6. Coloreo de grafos
 
